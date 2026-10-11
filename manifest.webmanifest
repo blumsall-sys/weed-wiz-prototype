@@ -1,0 +1,23 @@
+{
+  "name": "Weed Wizards: The Apprentice\u2019s Garden",
+  "short_name": "Weed Wizards",
+  "description": "Original browser-based pixel-art gardening adventure.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#172638",
+  "theme_color": "#315d48",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
