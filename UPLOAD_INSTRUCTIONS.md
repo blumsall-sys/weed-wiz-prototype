@@ -1,22 +1,17 @@
-# Wiz Dog v0.8 — GitHub Pages Testing
+# Wiz Dog v0.9 — GitHub Pages update
 
-This ZIP is a deployable static web application. No framework, build step, backend, API key, or package installation is needed.
+1. Extract `Wiz_Dog_GitHub_Pages_UPLOAD_v0.9.zip`.
+2. Upload the extracted **files and folders**, not the ZIP, to the root of your existing GitHub Pages repository. Keep `assets/`, `src/`, `index.html`, `sw.js`, and `manifest.webmanifest` at their supplied locations.
+3. Commit. Under **Settings → Pages**, confirm deployment from `main` branch, root `/(root)` (or your current site configuration).
+4. Reload the deployed page until the masthead shows **playable build v0.9**. Mobile devices may require closing the tab and reopening due to the prior service worker cache. Build v0.9 uses a new cache identifier.
+5. Existing saves retain the previous v0.7 key and will load normally; no reset is needed. A new game may be useful when replaying the opening quest.
 
-## Update your existing GitHub Pages repository
-1. Download and extract `Wiz_Dog_GitHub_Pages_UPLOAD_v0.8.zip`.
-2. Open your existing Wiz Dog repository on github.com.
-3. Upload the **contents** of the extracted folder to the repository's root. Keep `index.html`, `sw.js`, `manifest.webmanifest`, `src/`, and `assets/` in their relative locations. Do not upload the ZIP as one file, and do not put everything inside a `Wiz_Dog_v0.8/` subfolder.
-4. Commit the replacement/changed files. If the web uploader is inconvenient, use GitHub Desktop to copy the extracted files over your cloned repository, commit, and push.
-5. Keep GitHub Pages configured to publish from your existing `main` branch / `(root)` directory and wait for deployment.
-6. Open your existing GitHub Pages URL. Confirm the header says `playable build v0.8`.
+The package has fewer than 100 files and is suitable for GitHub's browser upload limit. For future updates, GitHub Desktop is a convenient alternative to dragging files into the site.
 
-## Local Windows testing
-Open `index.html` in Chrome. All resources are local and do not require a running server. Audio on mobile may require a user-initiated tap, according to browser autoplay policy.
-
-## Cache and save games
-- Service-worker cache name is now `wiz-dog-build-v08`. Older caches are retired when the browser activates the new service worker.
-- Reload the deployed page twice if it still shows v0.7. You can also refresh without using cached content.
-- Don't clear the website's local storage if you want to keep your save. The save key is intentionally unchanged from v0.7.
-
-## Scope of this version
-Only animal artwork, portraits, app icons, the displayed build number and related caching metadata changed. World art, controls, interface placement, dialogue, music, game mechanics and quests are unchanged.
+## Priority test cases
+- From the garden: approach the cottage's visible door, walk up into the room, then exit through the single south-wall threshold. You should reappear immediately outside the door.
+- In Mosswick: try both squares of the green-roof Seed Shop doorway; they should both enter correctly and use the matching indoor exit side.
+- Repeat with both squares of the red-roof bakery door.
+- Try stepping against the old incorrect doorway square left of the shop door. That square should now be solid.
+- Walk around interior furniture, interact with the bed/spellbook/kitchen, and purchase seeds at Juniper's counter.
+- Check mobile tap-to-move and tablet layout as in previous builds.

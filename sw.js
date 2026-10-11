@@ -1,4 +1,4 @@
-const CACHE='wiz-dog-build-v08';
+const CACHE='wiz-dog-build-v09';
 const ASSETS=[
   "./",
   "./index.html",

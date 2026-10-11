@@ -51,18 +51,34 @@ const NPCS={farm:[{id:'devin',x:11,y:10,name:'Devin the Elder Dog',species:'dog'
  {id:'ped6',x:18,y:19,name:'Shade the Hooded Hound',species:'dog',wander:true,lines:['Some blight farmers would rather steal a garden than grow their own.','Devin knows how to protect this valley.']}
  ],shop:[{id:'seedstore',x:10,y:5,name:'Juniper the Seed Cat',species:'cat',lines:['The finest seeds are shared between neighbours.','Come to my counter to buy Moonleaf seeds.']}],
  bakery:[{id:'baker2',x:11,y:6,name:'Bram’s Assistant Pup',species:'dog',lines:['Welcome to the warmest kitchen in Mosswick!','Try the counter for fresh bread.']}]};
-const portals={farm:[{x:6,y:9,to:'home',px:9,py:13},{x:37,y:12,to:'town',px:1,py:12}],home:[{x:9,y:15,to:'farm',px:6,py:11}],town:[{x:0,y:12,to:'farm',px:36,py:12},{x:11,y:8,to:'shop',px:9,py:13},{x:25,y:8,to:'bakery',px:9,py:13}],shop:[{x:9,y:15,to:'town',px:11,py:9}],bakery:[{x:9,y:15,to:'town',px:25,py:9}]};
+// Doorways are defined once in tile coordinates. The art is on a 24px grid:
+// cottage door 1 cell, seed shop and bakery doors 2 cells across.
+// Exterior y = last building row; interior y = last room row.
+const DOORWAYS=[
+ {outside:'farm',inside:'home',outsideY:9,outsideX:[6],insideX:[9],outsideLandingY:10},
+ {outside:'town',inside:'shop',outsideY:8,outsideX:[12,13],insideX:[9,10],outsideLandingY:9},
+ {outside:'town',inside:'bakery',outsideY:8,outsideX:[25,26],insideX:[9,10],outsideLandingY:9}
+];
+const portals={farm:[{x:37,y:12,to:'town',px:1,py:12}],home:[],town:[{x:0,y:12,to:'farm',px:36,py:12}],shop:[],bakery:[]};
+for(const d of DOORWAYS){
+ for(let i=0;i<d.outsideX.length;i++){
+  const x=d.outsideX[i],indoor=d.insideX[i];
+  portals[d.outside].push({x,y:d.outsideY,to:d.inside,px:indoor,py:13});
+  portals[d.inside].push({x:indoor,y:15,to:d.outside,px:x,py:d.outsideLandingY});
+ }
+}
+
 const sceneNames={farm:'The Green Patch',home:'Your Cozy Den',town:'Mosswick Village',shop:'Juniper’s Seed Shop',bakery:'Bram’s Bakery'};
 const world={};
 function mapNew(w,h,ground){return{w,h,g:Array.from({length:w*h},()=>ground),b:new Set(),d:{}};}
 function key(x,y){return x+','+y}function idx(m,x,y){return y*m.w+x}function put(m,x,y,v,block){if(x<0||y<0||x>=m.w||y>=m.h)return;m.g[idx(m,x,y)]=v;if(block)m.b.add(key(x,y));else m.b.delete(key(x,y))}function setProp(m,x,y,p){m.d[key(x,y)]=p}
 function rect(m,x,y,w,h,v,block=false){for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)put(m,i,j,v,block)}
 function frame(m){for(let x=0;x<m.w;x++){put(m,x,0,'tree',true);put(m,x,m.h-1,'tree',true)}for(let y=0;y<m.h;y++){put(m,0,y,'tree',true);put(m,m.w-1,y,'tree',true)}}
-function building(m,x,y,w,h,roof,doorx){rect(m,x,y,w,h,roof,true);put(m,doorx,y+h-1,'door',false)}
+function building(m,x,y,w,h,roof,doorXs){rect(m,x,y,w,h,roof,true);for(const doorX of doorXs)put(m,doorX,y+h-1,'door',false)}
 function createWorld(){
  let m=mapNew(38,24,'grass');world.farm=m;frame(m);for(let x=5;x<38;x++)put(m,x,12,'path');for(let y=9;y<=12;y++)put(m,6,y,'path');for(let x=6;x<=11;x++)put(m,x,11,'path');for(let x=19;x<27;x++)put(m,x,6,'path');for(let y=6;y<13;y++)put(m,24,y,'path');rect(m,3,3,7,7,'house',true);put(m,6,9,'door',false);setProp(m,6,9,'house');for(const {x,y} of PLOTS)put(m,x,y,'soil');for(const p of [[4,18],[5,18],[6,18],[30,5],[29,6],[31,7],[33,18],[34,17],[26,20],[3,15],[8,19]])put(m,p[0],p[1],'tree',true);for(const p of [[20,9],[20,12],[29,15],[10,19]])put(m,p[0],p[1],'log',true);rect(m,29,8,4,3,'water',true);put(m,29,12,'arch',false);put(m,37,12,'path');put(m,25,6,'shimmer');setProp(m,25,6,'seeds');setProp(m,4,12,'sign');setProp(m,32,11,'roadSign');
- m=mapNew(36,24,'grass');world.town=m;frame(m);rect(m,1,12,34,2,'path');rect(m,17,7,3,11,'path');rect(m,3,9,30,2,'path');rect(m,10,9,3,4,'path');rect(m,24,9,3,4,'path');rect(m,5,15,3,4,'path');building(m,8,3,8,6,'shoproof',11);building(m,21,3,9,6,'bakeroof',25);building(m,23,16,8,5,'roof2',26);rect(m,16,12,4,2,'fountain',true);put(m,17,13,'fountain',true);for(const p of [[3,4],[4,4],[5,4],[32,5],[31,18],[11,20],[9,20],[3,20]])put(m,p[0],p[1],'tree',true);put(m,0,12,'path');setProp(m,5,11,'townSign');setProp(m,26,20,'library');
- for(const type of ['home','shop','bakery']){m=mapNew(20,16,'floor');world[type]=m;for(let x=0;x<20;x++){put(m,x,0,'wall',true);put(m,x,15,'wall',true)}for(let y=0;y<16;y++){put(m,0,y,'wall',true);put(m,19,y,'wall',true)}put(m,9,15,'door',false);rect(m,7,7,6,3,'rug');if(type==='home'){rect(m,3,3,3,3,'bed',true);rect(m,13,3,4,3,'stove',true);rect(m,10,5,2,2,'table',true);put(m,7,3,'book',true);put(m,14,10,'chest',true);setProp(m,4,5,'bed');setProp(m,7,3,'book');setProp(m,14,10,'chest')}else if(type==='shop'){rect(m,3,2,5,3,'shelf',true);rect(m,12,2,4,3,'shelf',true);rect(m,7,7,6,2,'counter',true);setProp(m,10,7,'counter');}else{rect(m,3,3,5,3,'stove',true);rect(m,12,4,4,4,'counter',true);setProp(m,12,6,'counter')}}
+ m=mapNew(36,24,'grass');world.town=m;frame(m);rect(m,1,12,34,2,'path');rect(m,17,7,3,11,'path');rect(m,3,9,30,2,'path');rect(m,10,9,3,4,'path');rect(m,24,9,3,4,'path');rect(m,5,15,3,4,'path');building(m,8,3,8,6,'shoproof',DOORWAYS[1].outsideX);building(m,21,3,9,6,'bakeroof',DOORWAYS[2].outsideX);building(m,23,16,8,5,'roof2',[]);rect(m,16,12,4,2,'fountain',true);put(m,17,13,'fountain',true);for(const p of [[3,4],[4,4],[5,4],[32,5],[31,18],[11,20],[9,20],[3,20]])put(m,p[0],p[1],'tree',true);put(m,0,12,'path');setProp(m,5,11,'townSign');setProp(m,26,20,'library');
+ for(const type of ['home','shop','bakery']){m=mapNew(20,16,'floor');world[type]=m;for(let x=0;x<20;x++){put(m,x,0,'wall',true);put(m,x,15,'wall',true)}for(let y=0;y<16;y++){put(m,0,y,'wall',true);put(m,19,y,'wall',true)}for(const doorway of DOORWAYS.filter(d=>d.inside===type))for(const x of doorway.insideX)put(m,x,15,'door',false);rect(m,7,7,6,3,'rug');if(type==='home'){rect(m,3,3,3,3,'bed',true);rect(m,13,3,3,3,'stove',true);rect(m,10,5,2,2,'table',true);rect(m,7,3,2,3,'book',true);put(m,14,10,'chest',true);setProp(m,4,5,'bed');setProp(m,7,3,'book');setProp(m,14,10,'chest')}else if(type==='shop'){rect(m,3,3,5,3,'shelf',true);rect(m,12,3,4,3,'shelf',true);rect(m,7,7,6,2,'counter',true);setProp(m,10,7,'counter');}else{rect(m,3,3,5,3,'stove',true);rect(m,12,4,4,2,'counter',true);setProp(m,12,6,'counter')}}
 }
 createWorld();
 // An accessibility preference is intentionally independent of game saves, so a new
@@ -182,7 +198,7 @@ function npcPos(n){let d=pedsOffset[n.id]||{x:0,y:0};return{x:n.x+d.x,y:n.y+d.y}
 function npcAt(x,y){return(NPCS[state.scene]||[]).find(n=>{let p=npcPos(n);return p.x===x&&p.y===y})}
 function solid(scene,x,y,jump=false){let m=world[scene];if(x<0||y<0||x>=m.w||y>=m.h)return true;if(npcAt(x,y))return true;if(m.b.has(key(x,y))){let t=m.g[idx(m,x,y)];if(t==='log'&&jump)return false;return true}let t=m.g[idx(m,x,y)];if(t==='arch'&&!held.has('crouch'))return true;return false}
 function move(dx,dy,jumping=false){if(mode!=='game')return;state.dir=dx===1?'right':dx===-1?'left':dy===1?'down':'up';let tx=state.x+dx,ty=state.y+dy;if(solid(state.scene,tx,ty,jumping)){if(world[state.scene].g[idx(world[state.scene],Math.max(0,Math.min(world[state.scene].w-1,tx)),Math.max(0,Math.min(world[state.scene].h-1,ty)))]==='arch')notify('Hold crouch (C) to slip beneath the arch.');return}state.x=tx;state.y=ty;state.time+=.006;if(state.time>20){state.time=9;state.settings.night=!state.settings.night}if(jumping)jumpUntil=performance.now()+420;for(const p of portals[state.scene]||[])if(p.x===state.x&&p.y===state.y){enter(p);break}if(state.scene==='farm'&&state.x===25&&state.y===6&&!state.seedFound)collectSeeds();updateSide();}
-function enter(p){clearWalkTarget();sound('door');state.scene=p.to;state.x=p.px;state.y=p.py;state.dir='down';if(!state.discovered.includes(p.to))state.discovered.push(p.to);if(p.to==='home'&&!state.flags.visitedHome){state.flags.visitedHome=true;if(state.quest===0)questComplete();say('Cottage',['Home! A bed for resting, a cookbook, a chest, and a little kitchen.','Try Z beside the bed to sleep and advance your garden by one day.']);}else if(p.to==='town'&&!state.flags.metPip&&state.quest>=5)notify('Find Pip in green by the seed shop!');else notify('Welcome to '+sceneNames[p.to]);save()}
+function enter(p){clearWalkTarget();sound('door');state.scene=p.to;state.x=p.px;state.y=p.py;state.dir=DOORWAYS.some(d=>d.inside===p.to)?'up':'down';if(!state.discovered.includes(p.to))state.discovered.push(p.to);if(p.to==='home'&&!state.flags.visitedHome){state.flags.visitedHome=true;if(state.quest===0)questComplete();say('Cottage',['Home! A bed for resting, a cookbook, a chest, and a little kitchen.','Try Z beside the bed to sleep and advance your garden by one day.']);}else if(p.to==='town'&&!state.flags.metPip&&state.quest>=5)notify('Find Pip in green by the seed shop!');else notify('Welcome to '+sceneNames[p.to]);save()}
 function collectSeeds(){state.seedFound=true;state.seeds+=3;if(state.skills.find)state.seeds+=2;sound('pickup');notify('Found '+(state.skills.find?5:3)+' Moonleaf seeds!');if(state.quest===2)questComplete();save()}
 function doNpc(n){if(n.id==='devin'){if(state.quest===1){say('Devin the Elder Dog',['A new apprentice! I am Devin, the oldest dog mage in this valley.','Magical Moonleaf and moon-mushrooms grant great powers, but you must learn patience first. Follow the east trail to find a pouch of enchanted seeds.'],()=>{state.flags.metDevin=true;questComplete()})}else if(state.quest===7){questComplete()}else say('Devin the Elder Dog',n.lines)}
 else if(n.id==='pip'){if(state.quest===5){say('Pip the Herbalist Cat',['Welcome to Mosswick! Cats and dogs from across the valley come for our magical gardens.','Your Moonleaf is growing? Wonderful! Take this charm. But watch for hungry pests and blight farmers near your garden.'],()=>{state.flags.metPip=true;state.coins+=4;state.snail.active=true;questComplete()})}else say('Pip',n.lines)}else if(n.id==='seedstore'){openPanel('seedShop')}else if(n.id==='baker'){state.heart=Math.min(5,state.heart+1);say('Bram',['Have a warm bun. Your heart feels a little lighter!','The best adventures include a snack break.']);updateSide()}else say(n.name,n.lines)}
@@ -211,7 +227,7 @@ function snailInteract(){if(state.quest===6){state.snail.active=false;state.snai
 function interact(){if(mode==='dialog'){nextLine();return}if(mode==='panel'){closeOverlay();return}if(mode!=='game')return;interactUntil=performance.now()+300;let a=ahead();let npc=(NPCS[state.scene]||[]).find(n=>{let p=npcPos(n);return near(p.x,p.y)&&(p.x===a.x&&p.y===a.y)});if(!npc)npc=(NPCS[state.scene]||[]).find(n=>{let p=npcPos(n);return near(p.x,p.y)});if(npc){doNpc(npc);return}
  if(state.scene==='farm'&&state.snail.active&&near(state.snail.x,state.snail.y)){snailInteract();return}
  if(state.scene==='farm'){let plot=PLOTS.find(p=>p.x===a.x&&p.y===a.y)||PLOTS.find(p=>p.x===state.x&&p.y===state.y);if(plot){doPlot(plot.x,plot.y);return}if(near(25,6)&&!state.seedFound){collectSeeds();return}}
- if(state.scene==='home'){if(near(4,5)){say('Cozy Bed',['A little rest makes crops grow. Tomorrow is only a nap away.'],()=>nextDay());return}if(near(7,3)){say('Old Spellbook',['The first lesson of every valley wizard: grow before you glow.','Three magical schools wait in your skill tree: Rootcraft, Lightcraft and Wayfinding.']);return}if(near(14,10)){say('Storage Chest',['Your spell chest is empty for now. Someday it may hold wands, trinkets and unusual seeds.']);return}if(near(14,4)){say('Kitchen',['There is bread, herbal tea and an incredibly suspicious glowing kettle.']);return}}
+ if(state.scene==='home'){if(near(4,5)){say('Cozy Bed',['A little rest makes crops grow. Tomorrow is only a nap away.'],()=>nextDay());return}if(near(7,3)||near(7,5)){say('Old Spellbook',['The first lesson of every valley wizard: grow before you glow.','Three magical schools wait in your skill tree: Rootcraft, Lightcraft and Wayfinding.']);return}if(near(14,10)){say('Storage Chest',['Your spell chest is empty for now. Someday it may hold wands, trinkets and unusual seeds.']);return}if(near(14,4)||near(14,5)){say('Kitchen',['There is bread, herbal tea and an incredibly suspicious glowing kettle.']);return}}
  if(state.scene==='shop'&&((a.y>=7&&a.y<=8&&a.x>=7&&a.x<=12)||(state.y===9&&state.x>=7&&state.x<=12))){openPanel('seedShop');return}
  if(state.scene==='bakery'&&near(12,6)){if(state.coins>=2){sound('purchase');state.coins-=2;state.heart=5;say('Bakery',['A fresh honey bun restores your hearts!','That costs 2 coins.'])}else say('Bakery','The honey bun costs 2 coins.');return}
  if(state.scene==='farm'&&near(4,12)){say('Wooden Sign',['THE GREEN PATCH','Keep your garden safe. Make magic kindly.']);return}if(state.scene==='town'&&near(5,11)){say('Town Sign',['MOSSWICK VILLAGE','West: Gardens · North: Shops · East: Starlit Woods (coming soon)']);return}if(state.scene==='town'&&near(26,20)){say('Library',['The old library is being renovated. Strange new stories will open in a later chapter.']);return}
@@ -386,7 +402,7 @@ function tileDraw(t,x,y,wx,wy,now){
   blit('world','water',x,y,T,T);
   if((wx+wy)%2===0)blit('world','lily',x,y,T,T);
  }
- else if(t==='door'&&!['farm','town'].includes(state.scene))blit('world','door',x-2,y-7,T+4,T+7);
+ // Interior exits use dedicated horizontally aligned thresholds, never the old exterior door sprite.
 }
 // One contiguous exterior image per building; collisions and door portals
 // remain defined in the original tile map, so quests / interiors still work.
@@ -400,14 +416,22 @@ function drawBuildings(camX,camY){
  }
 }
 const objectLayouts={
- home:[['bed',3,3,3,3],['stove',13,3,4,3],['table',10,5,2,2],['bookshelf',7,3,1,2],['chest',14,10,1,1]],
- shop:[['bookshelf',3,2,5,3],['bookshelf',12,2,4,3],['interiors:seed_counter',7,7,6,2]],
- bakery:[['stove',3,3,5,3],['interiors:bakery_counter',12,4,4,4]]
+ home:[['interiors:bed_fitted',3,3,3,3],['interiors:stove_fitted',13,3,3,3],['interiors:table_fitted',10,5,2,2],['interiors:bookcase_fitted',7,3,2,3],['interiors:chest_fitted',14,10,1,1]],
+ shop:[['interiors:shop_shelves_five',3,3,5,3],['interiors:shop_shelves_four',12,3,4,3],['interiors:seed_counter',7,7,6,2]],
+ bakery:[['interiors:bakery_stoves',3,3,5,3],['interiors:bakery_counter_fitted',12,4,4,2]]
 };
 function drawFurniture(camX,camY){
  for(const [sprite,x,y,w,h] of (objectLayouts[state.scene]||[])) {
   const [group,name]=sprite.includes(':')?sprite.split(':'):['world',sprite];
   blit(group,name,Math.floor(x*T-camX),Math.floor(y*T-camY),w*T,h*T);
+ }
+ // The indoor map exits through the SOUTH wall. Use a ground-level threshold
+ // exactly on the portal cells, not a tall exterior-facing door cut by viewport.
+ const doorway=DOORWAYS.find(d=>d.inside===state.scene);
+ if(doorway){
+  const first=doorway.insideX[0];
+  blit('interiors',doorway.insideX.length===1?'threshold_single':'threshold_double',
+   Math.floor(first*T-camX),Math.floor(15*T-camY),doorway.insideX.length*T,T);
  }
 }
 function drawWizard(sx,sy,now){
@@ -473,11 +497,15 @@ function drawQuestMarker(camX,camY,now){
  const y=Math.round(Math.max(47,Math.min(H-12,py)));
  const bob=Math.round(Math.sin(now/210)*2);
  // A small floating marker, never a large text box over doors or NPCs.
- const cy=y-28+bob;
- ctx.fillStyle='#162a2ce8';ctx.fillRect(x-9,cy-9,18,19);
- ctx.strokeStyle=target.portal?'#89e2ff':'#f5ce65';ctx.lineWidth=2;ctx.strokeRect(x-9,cy-9,18,19);
+ // At indoor exits the old portal marker floated over the player's body.
+ // Anchor the small arrow BESIDE the threshold on the south wall instead.
+ const indoorExit=target.portal&&DOORWAYS.some(d=>d.inside===state.scene);
+ const markerX=indoorExit?Math.max(13,x-32):x;
+ const cy=indoorExit?H-17+bob:y-28+bob;
+ ctx.fillStyle='#162a2ce8';ctx.fillRect(markerX-9,cy-9,18,19);
+ ctx.strokeStyle=target.portal?'#89e2ff':'#f5ce65';ctx.lineWidth=2;ctx.strokeRect(markerX-9,cy-9,18,19);
  ctx.fillStyle=target.portal?'#a7e6ef':'#ffe394';ctx.font='bold 14px monospace';
- ctx.fillText(target.portal?'›':'!',x-4,cy+5);
+ ctx.fillText(target.portal?'›':'!',markerX-4,cy+5);
 }
 
 function render(now){
