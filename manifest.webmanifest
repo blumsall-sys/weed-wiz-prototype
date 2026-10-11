@@ -1,7 +1,7 @@
 {
-  "name": "Weed Wizards: The Apprentice\u2019s Garden",
-  "short_name": "Weed Wizards",
-  "description": "Original browser-based pixel-art gardening adventure.",
+  "name": "Wiz Dog: Paws & Potions",
+  "short_name": "Wiz Dog",
+  "description": "Choose Sunny the Cat or Peaches the Dog and become a magical garden wizard.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

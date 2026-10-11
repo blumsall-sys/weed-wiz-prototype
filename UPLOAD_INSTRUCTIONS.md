@@ -1,19 +1,22 @@
-# Weed Wizards v0.6 - GitHub Pages installation
+# Wiz Dog v0.8 — GitHub Pages Testing
 
-1. Extract **Weed_Wizards_GitHub_Pages_UPLOAD_v0.6.zip** on Windows.
-2. Open your existing GitHub repository (the one hosting the current Weed Wizards test) and choose Add file > Upload files.
-3. Drag the **contents** of the extracted folder into the GitHub web uploader, keeping `index.html` at repository root and preserving `src/` and `assets/` subdirectories. Upload the files, not the ZIP.
-4. Commit to the branch deployed in Settings > Pages. Wait for Pages publishing to finish.
-5. Open the GitHub Pages address with `?build=v06` appended, e.g. `https://YOUR-USER.github.io/YOUR-REPO/?build=v06`.
-6. If a previous cached build still appears, perform Ctrl+Shift+R in desktop Chrome, or remove that site's stored website data / unregister the Weed Wizards service worker under browser Site Settings. Reopen the v0.6 URL after the site is updated. You should see `/ playable build v0.6` at the top.
+This ZIP is a deployable static web application. No framework, build step, backend, API key, or package installation is needed.
 
-This upload includes a lightweight, static playable website; it is under GitHub's 100-file web-upload batch limit. For routine updates you can also use GitHub Desktop to commit/push whole folders without the browser batch limit.
+## Update your existing GitHub Pages repository
+1. Download and extract `Wiz_Dog_GitHub_Pages_UPLOAD_v0.8.zip`.
+2. Open your existing Wiz Dog repository on github.com.
+3. Upload the **contents** of the extracted folder to the repository's root. Keep `index.html`, `sw.js`, `manifest.webmanifest`, `src/`, and `assets/` in their relative locations. Do not upload the ZIP as one file, and do not put everything inside a `Wiz_Dog_v0.8/` subfolder.
+4. Commit the replacement/changed files. If the web uploader is inconvenient, use GitHub Desktop to copy the extracted files over your cloned repository, commit, and push.
+5. Keep GitHub Pages configured to publish from your existing `main` branch / `(root)` directory and wait for deployment.
+6. Open your existing GitHub Pages URL. Confirm the header says `playable build v0.8`.
 
-## Shop test
-Play/continue, travel east to Mosswick, enter Juniper's shop and approach the front edge of the central counter. Press Z (or tap the counter). Buy a seed, check that coins decrease and seeds increase in Apprentice Status. Close the menu and continue. You can also reach the counter with tap-to-move.
+## Local Windows testing
+Open `index.html` in Chrome. All resources are local and do not require a running server. Audio on mobile may require a user-initiated tap, according to browser autoplay policy.
 
-## Browser speech
-Optional TTS is built into Chrome/Safari; no cloud API or subscription. It may require a gesture to start playback on mobile.
+## Cache and save games
+- Service-worker cache name is now `wiz-dog-build-v08`. Older caches are retired when the browser activates the new service worker.
+- Reload the deployed page twice if it still shows v0.7. You can also refresh without using cached content.
+- Don't clear the website's local storage if you want to keep your save. The save key is intentionally unchanged from v0.7.
 
-## Developer pack
-The separate EDITABLE Windows ZIP contains source art, individual PNG sprites, a repacker and tests. To create the lightweight upload directory from the full source later, run `py tools/build_github_package.py` (Python 3) and upload the generated `github-pages-upload/` contents.
+## Scope of this version
+Only animal artwork, portraits, app icons, the displayed build number and related caching metadata changed. World art, controls, interface placement, dialogue, music, game mechanics and quests are unchanged.

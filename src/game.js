@@ -1,6 +1,8 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id), canvas=$('game'),ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
-const W=480,H=320,T=24,SAVE='weed-wizards-proto-v1';
+const W=480,H=320,T=24,SAVE='wiz-dog-save-v07',LEGACY_SAVE='weed-wizards-proto-v1';
+let chosenHero='sunny';
+const HEROES={sunny:{name:'Sunny',species:'Cat',ability:'Moon Eyes',detail:'Long-range light spells and quick focus recovery.'},peaches:{name:'Peaches',species:'Dog',ability:'Guardian Bark',detail:'A bark pulse helps repel nearby crop pests.'}};
 const dirs={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
 
 // Assets are packaged with the game. Atlas data is a local JS file rather than fetch(),
@@ -26,26 +28,31 @@ function blit(group,name,x,y,w,h){
 }
 
 const QUESTS=[
- ['Home Sweet Home','Look inside your cottage.','The little cottage is northwest. Walk through its front door with WASD.'],
- ['Meet Your Mentor','Talk to Moss, the garden keeper.','Moss is the white-bearded wizard with a glowing staff outside the cottage.'],
- ['A Seed of Possibility','Find the glowing seed satchel.','Follow the east path toward the golden shimmer by the grove.'],
- ['Plant Your First Moonleaf','Plant a seed in an empty garden plot.','Stand beside a brown bed and press Z to plant (touchscreen: A).'],
- ['Give It a Drink','Water your planted Moonleaf.','Face your planted bed and press Z again to water (touchscreen: A).'],
- ['The Village Herbalist','Meet Pip in the town square.','Follow the road east to Mosswick and speak to Pip in green.'],
- ['The Hungry Visitor','Shoo away the snail from your garden.','Return home. Stand next to the hungry snail and press Z (touchscreen: A).'],
- ['A Wizard Is Born','Return to Moss for your first wand.','Find Moss by your cottage. Your first lesson is complete!'],
- ['Apprenticeship: Chapter Two','Free play! Grow crops, explore and cast light.','Rest in bed to advance crops, or visit the village. X casts light (touchscreen: B).']
+ ['Home Sweet Home','Explore your cottage.','The cozy home is northwest. Walk with WASD / arrow keys, or tap a place.'],
+ ['Meet Devin','Talk to Devin, the old dog wizard.','Devin is the elderly dog with a glowing staff by your cottage.'],
+ ['A Seed of Possibility','Find the glowing Moonleaf seed satchel.','Follow the eastern trail to the sparkle near the grove.'],
+ ['Plant Your First Moonleaf','Plant your first seed.','Face a garden plot and press A (keyboard Z / Enter).'],
+ ['Give It a Drink','Water your newly planted Moonleaf.','Face your planted bed and press A (keyboard Z / Enter).'],
+ ['Meet Mosswick','Talk with Pip in the village.','Follow the east road, then talk to Pip the herbalist cat.'],
+ ['A Hungry Visitor','Gently shoo the snail away.','Return to your garden and interact with the hungry snail.'],
+ ['The Elder Wand','Return to Devin for your first wand.','Devin is waiting outside your cottage.'],
+ ['Guard the Green Patch','Use your wand to repel four crop threats.','Find the pests and the masked blight-farmer dog near your garden beds. Aim, then press B (keyboard X / Backspace).'],
+ ['Valley Guardian','Free play: grow magical crops and protect Mosswick.','Explore shops, harvest Moonleaf, rest, and use your spells. Grow Glowcap mushrooms for spell energy and protect your crops.']
 ];
 const PLOTS=[];for(const y of [12,14,16])for(const x of [14,16,18])PLOTS.push({x,y});
-const NPCS={farm:[{id:'moss',x:11,y:10,name:'Moss',color:'#9964ad',hat:'#56386c',lines:['The soil here remembers every good deed.','Small care is the oldest kind of magic.']}],town:[{id:'pip',x:12,y:10,name:'Pip the Herbalist',color:'#6ba96b',hat:'#b2c95e',lines:['Come back after your first harvest!','Rare seeds have a habit of finding curious people.']},{id:'baker',x:25,y:10,name:'Bram the Baker',color:'#ba8b57',hat:'#f8e0a9',lines:['Cinnamon buns and warm wishes.','Come by when you need to refill your hearts.']},{id:'ped1',x:19,y:17,name:'Wandering Wizard',color:'#758dd1',hat:'#504d83',wander:true,lines:['The town changes after sunset.','I heard a bell singing in the old grove.']},{id:'ped2',x:7,y:16,name:'Village Child',color:'#ce7682',hat:'#eeb89c',wander:true,lines:['I bet you can jump over little logs!','Try Space or the Jump button.']},
-{id:'ped3',x:28,y:13,name:'Mira the Gardener',wander:true,lines:['My Moonleaf loved the morning rain.','The village is quieter just before sunrise.']},
-{id:'ped4',x:33,y:15,name:'Little Rowan',wander:true,lines:['The crows know every secret in Mosswick!','One day I will find the Starlit Woods.']},
-{id:'ped5',x:7,y:11,name:'Juniper the Seed Seller',wander:false,lines:['Fresh seed sacks arrive every Thursday.','A good seed only needs somewhere safe to begin.']},
-{id:'ped6',x:18,y:19,name:'Traveling Root Mage',wander:true,lines:['Many roads begin in a garden.','Return when your wand is stronger and I may show you the forest path.']}],
-shop:[{id:'seedstore',x:10,y:5,name:'Juniper the Seed Seller',lines:['The finest seeds are always shared between friends.','Come to my counter to buy Moonleaf seeds.']}],
-bakery:[{id:'baker2',x:11,y:6,name:'Bram’s Assistant',lines:['Welcome to the warmest kitchen in Mosswick!','Try the counter for fresh bread.']}]};
+const NPCS={farm:[{id:'devin',x:11,y:10,name:'Devin the Elder Dog',species:'dog',lines:['A kind heart and a quick paw make the best garden magic.','Moonleaf and mystical mushrooms have kept this valley safe for generations.']}],town:[
+ {id:'pip',x:12,y:10,name:'Pip the Herbalist Cat',species:'cat',lines:['Magic mushrooms are rare in the old woods.','Until then, Moonleaf is the perfect beginner crop.']},
+ {id:'baker',x:25,y:10,name:'Bram the Baker Dog',species:'dog',lines:['Fresh biscuits, warm buns, and wagging tails.','Visit me when you need a snack!']},
+ {id:'ped1',x:19,y:17,name:'Luna the Travelling Cat',species:'cat',wander:true,lines:['I can smell night-blooming mushrooms from here.','The meadow whispers after sunset.']},
+ {id:'ped2',x:7,y:16,name:'Ruff the Village Pup',species:'dog',wander:true,lines:['I am learning to jump over little logs!','Try Space or the Jump button.']},
+ {id:'ped3',x:28,y:13,name:'Mira the Gardener Cat',species:'cat',wander:true,lines:['My Moonleaf loves the morning rain.','One day, I will grow singing mushrooms.']},
+ {id:'ped4',x:33,y:15,name:'Rowan the Pup',species:'dog',wander:true,lines:['A pest tried stealing our carrots yesterday!','I barked so loudly even the trees heard.']},
+ {id:'ped5',x:7,y:11,name:'Juniper the Seed Cat',species:'cat',wander:false,lines:['Fresh seed sacks arrive every Thursday.','Come into my shop for Moonleaf seeds.']},
+ {id:'ped6',x:18,y:19,name:'Shade the Hooded Hound',species:'dog',wander:true,lines:['Some blight farmers would rather steal a garden than grow their own.','Devin knows how to protect this valley.']}
+ ],shop:[{id:'seedstore',x:10,y:5,name:'Juniper the Seed Cat',species:'cat',lines:['The finest seeds are shared between neighbours.','Come to my counter to buy Moonleaf seeds.']}],
+ bakery:[{id:'baker2',x:11,y:6,name:'Bram’s Assistant Pup',species:'dog',lines:['Welcome to the warmest kitchen in Mosswick!','Try the counter for fresh bread.']}]};
 const portals={farm:[{x:6,y:9,to:'home',px:9,py:13},{x:37,y:12,to:'town',px:1,py:12}],home:[{x:9,y:15,to:'farm',px:6,py:11}],town:[{x:0,y:12,to:'farm',px:36,py:12},{x:11,y:8,to:'shop',px:9,py:13},{x:25,y:8,to:'bakery',px:9,py:13}],shop:[{x:9,y:15,to:'town',px:11,py:9}],bakery:[{x:9,y:15,to:'town',px:25,py:9}]};
-const sceneNames={farm:'The Green Patch',home:'Your Cozy Cottage',town:'Mosswick Village',shop:'Juniper’s Seed Shop',bakery:'Bram’s Bakery'};
+const sceneNames={farm:'The Green Patch',home:'Your Cozy Den',town:'Mosswick Village',shop:'Juniper’s Seed Shop',bakery:'Bram’s Bakery'};
 const world={};
 function mapNew(w,h,ground){return{w,h,g:Array.from({length:w*h},()=>ground),b:new Set(),d:{}};}
 function key(x,y){return x+','+y}function idx(m,x,y){return y*m.w+x}function put(m,x,y,v,block){if(x<0||y<0||x>=m.w||y>=m.h)return;m.g[idx(m,x,y)]=v;if(block)m.b.add(key(x,y));else m.b.delete(key(x,y))}function setProp(m,x,y,p){m.d[key(x,y)]=p}
@@ -61,15 +68,26 @@ createWorld();
 // An accessibility preference is intentionally independent of game saves, so a new
 // apprenticeship preserves the player's narration choice. No audio is uploaded.
 function readNarrationPref(){try{return localStorage.getItem('ww-voice-enabled')==='true'}catch(_){return false}}
-function fresh(){return{scene:'farm',x:10,y:13,dir:'up',quest:0,day:1,time:9,heart:5,energy:5,xp:0,coins:8,seeds:0,harvest:0,planted:{},seedFound:false,wand:false,wandCharge:5,skills:{green:0,light:0,find:0},skillPoints:0,flags:{visitedHome:false,metMoss:false,metPip:false,snailShoo:false},snail:{x:22,y:15,active:false,banish:0},settings:{sfx:true,music:true,musicVolume:.38,showTouch:true,night:false,pixelArt:true,narration:readNarrationPref(),narrateQuests:true,voiceRate:.9,questMarkers:true},discovered:['farm'],journal:[]}}
-let tapWalk=null, state=fresh(),mode='title',panelName='',dialogQueue=[],dialogCallback=null,held=new Set(),lastStep=0,lastSnail=0,lastMoveNpc=0,lastRegen=0,lastTime=0,lastSaved=0,prev=0,jumpUntil=0,jumpVelocity=0,toastUntil=0,castUntil=0,interactUntil=0,particles=[],shots=[],screenShake=0,modalReturn='game',pedsOffset={};
-function hasSave(){try{return !!localStorage.getItem(SAVE)}catch(_){return false}}
+function fresh(){return{hero:chosenHero,scene:'farm',x:10,y:13,dir:'up',quest:0,day:1,time:9,heart:5,energy:5,xp:0,coins:8,seeds:0,glowspores:0,glowCharges:0,selectedSeed:'moonleaf',harvest:0,planted:{},seedFound:false,wand:false,wandCharge:5,castCount:0,defense:[],skills:{green:0,light:0,find:0},skillPoints:0,flags:{visitedHome:false,metDevin:false,metPip:false,snailShoo:false,defenseStarted:false},snail:{x:22,y:15,active:false,banish:0},settings:{sfx:true,music:true,musicVolume:.38,showTouch:true,night:false,pixelArt:true,narration:readNarrationPref(),narrateQuests:true,voiceRate:.9,questMarkers:true},discovered:['farm'],journal:[]}}
+let tapWalk=null, state=fresh(),mode='title',panelName='',dialogQueue=[],dialogCallback=null,held=new Set(),lastStep=0,lastSnail=0,lastDefense=0,lastMoveNpc=0,lastRegen=0,lastTime=0,lastSaved=0,prev=0,jumpUntil=0,jumpVelocity=0,toastUntil=0,castUntil=0,interactUntil=0,particles=[],shots=[],screenShake=0,modalReturn='game',pedsOffset={};
+function hasSave(){try{return !!(localStorage.getItem(SAVE)||localStorage.getItem(LEGACY_SAVE))}catch(_){return false}}
 function save(){try{localStorage.setItem(SAVE,JSON.stringify(state));return true}catch(_){return false}}
-function load(){try{let s=JSON.parse(localStorage.getItem(SAVE));if(!s||!world[s.scene]||!Number.isInteger(s.quest))return false;state={...fresh(),...s,settings:{...fresh().settings,...s.settings},skills:{...fresh().skills,...s.skills},flags:{...fresh().flags,...s.flags}};state.quest=Math.max(0,Math.min(8,state.quest));state.x=Math.max(1,Math.min(world[state.scene].w-2,state.x));state.y=Math.max(1,Math.min(world[state.scene].h-2,state.y));return true}catch(_){return false}}
+function load(){try{
+ const migrated=!localStorage.getItem(SAVE);const raw=localStorage.getItem(SAVE)||localStorage.getItem(LEGACY_SAVE);
+ let s=JSON.parse(raw);if(!s||!world[s.scene]||!Number.isInteger(s.quest))return false;
+ state={...fresh(),...s,settings:{...fresh().settings,...s.settings},skills:{...fresh().skills,...s.skills},flags:{...fresh().flags,...s.flags}};
+ if(!HEROES[state.hero])state.hero='sunny';chosenHero=state.hero;
+ // The old free-play quest becomes the new crop-defense chapter; previous saves remain intact.
+ state.quest=Math.max(0,Math.min(9,state.quest));
+ if(migrated&&state.quest===8){state.wand=true;state.flags.defenseStarted=false;state.defense=[];}
+ state.x=Math.max(1,Math.min(world[state.scene].w-2,state.x));state.y=Math.max(1,Math.min(world[state.scene].h-2,state.y));
+ save();return true;
+ }catch(_){return false}}
 function setOverlay(html){$('overlay').innerHTML=html;$('overlay').classList.remove('hidden')}function closeOverlay(){if(mode==='title')return;$('overlay').classList.add('hidden');mode='game';panelName='';updateSide();syncTouchControls()}
 function syncTouchControls(){const el=$('controls');if(el)el.classList.toggle('hideControls',mode!=='game'||!state.settings.showTouch)}
-function title(){stopSpeech();pauseMusic();mode='title';titleMarkup=titleMarkup.replace(/Narration (ON|OFF)/g,'Narration '+(state.settings.narration?'ON':'OFF'));setOverlay(titleMarkup);$('continueBtn').disabled=!hasSave();$('dialog').classList.add('hidden');held.clear();clearWalkTarget();syncTouchControls()}
-function begin(continueGame=false){stopSpeech();state=continueGame&&load()?state:fresh();startMusic();$('controls').classList.toggle('hideControls',!state.settings.showTouch);mode='game';$('overlay').classList.add('hidden');$('dialog').classList.add('hidden');updateSide();clearWalkTarget();syncTouchControls();if(!continueGame||!hasSave()){say('Narrator',['A tiny cottage. Nine empty garden beds. A village beyond the trees.','Today you are nobody important. Tomorrow? Who knows. First, explore your cottage!'])}else notify('Welcome back, apprentice!');save()}
+function title(){stopSpeech();pauseMusic();mode='title';titleMarkup=titleMarkup.replace(/Narration (ON|OFF)/g,'Narration '+(state.settings.narration?'ON':'OFF'));setOverlay(titleMarkup);$('continueBtn').disabled=!hasSave();updateHeroChoice();$('dialog').classList.add('hidden');held.clear();clearWalkTarget();syncTouchControls()}
+function updateHeroChoice(){document.querySelectorAll('[data-hero]').forEach(el=>{let on=el.dataset.hero===chosenHero;el.classList.toggle('selected',on);el.setAttribute('aria-pressed',String(on));});const b=$('beginBtn');if(b)b.textContent='✦ Play as '+HEROES[chosenHero].name;}
+function begin(continueGame=false){stopSpeech();state=continueGame&&load()?state:fresh();chosenHero=state.hero;startMusic();$('controls').classList.toggle('hideControls',!state.settings.showTouch);mode='game';$('overlay').classList.add('hidden');$('dialog').classList.add('hidden');updateSide();clearWalkTarget();syncTouchControls();if(!continueGame||!hasSave()){say('Narrator',['Welcome, '+HEROES[state.hero].name+' the '+HEROES[state.hero].species+'! Every neighbour in Mosswick has paws, a story, and a little bit of magic.','Your gift is '+HEROES[state.hero].ability+'. Explore your cozy den, meet old dog Devin, and learn to grow magical Moonleaf!'])}else {notify('Welcome back, '+HEROES[state.hero].name+'!');if(state.quest===8&&!state.flags.defenseStarted)startDefense();}save()}
 let titleMarkup=$('overlay').innerHTML;
 const htmlEsc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let utteranceId=0; // cancels stale onend handlers and prevents music ducking races
@@ -121,8 +139,44 @@ function sound(name='ui'){
  initialiseAudio();let f=fx[name]||fx.ui;if(!f)return;
  try{const a=f.cloneNode(true);a.volume=.48;const p=a.play();if(p&&p.catch)p.catch(()=>{});}catch(_){}
 }
-function questComplete(why){if(state.quest>=8)return;const old=state.quest;state.quest++;state.xp+=10;if([3,5,7].includes(old))state.skillPoints++;state.journal.push('Day '+state.day+': '+QUESTS[old][0]);sound('quest');notify('✦ Quest complete! +10 XP'+([3,5,7].includes(old)?' · +1 skill point':''));if(state.quest===2&&state.seedFound){questComplete();return}if(state.quest===3&&Object.keys(state.planted).length){questComplete();return}if(state.quest===4&&Object.values(state.planted).some(p=>p.watered)){questComplete();return}if(state.quest===8){state.wand=true;save();say('Moss',['You’ve cared for a small life, listened to your neighbours, and defended your garden without cruelty.','Take this GLIMMER WAND! Press X to cast light, or tap B on a touchscreen.','Your apprenticeship has only just begun. The rest of Mosswick is waiting.'],()=>{openPanel('ending')})}save();updateSide();if(mode==='game')speakQuest()}
-function updateSide(){$('placeHud').textContent='✦ '+sceneNames[state.scene];$('dayHud').textContent='Day '+state.day+' · '+(state.settings.night?'☾ Evening':'☀ Morning');$('questSide').textContent=QUESTS[state.quest][1];$('hintSide').textContent=QUESTS[state.quest][2];const ribbon=$('questRibbon');if(ribbon){ribbon.textContent='❗ '+(state.quest<8?'QUEST '+(state.quest+1)+'/8 · ':'FREE PLAY · ')+QUESTS[state.quest][0];ribbon.setAttribute('aria-label','Open quest journal: '+QUESTS[state.quest][0]);}$('statusSide').innerHTML='🪄 Wand: '+(state.wand?'Glimmer Wand':'not earned')+'<br>🌱 Seeds: '+state.seeds+' · ✦ XP: '+state.xp+'<br>🪙 Coins: '+state.coins+' · ✧ Skills: '+state.skillPoints;$('healthBar').style.width=(100*state.heart/5)+'%';$('healthText').textContent='Hearts '+state.heart+'/5 · Focus '+state.wandCharge+'/5';}
+function startDefense(){
+ if(state.flags.defenseStarted)return;
+ state.flags.defenseStarted=true;state.defense=[
+ {id:'slug',kind:'snail',x:15,y:12,hp:1},
+ {id:'beetle',kind:'beetle',x:19,y:14,hp:1},
+ {id:'moth',kind:'beetle',x:17,y:17,hp:1},
+ {id:'farmer',kind:'farmer',x:22,y:15,hp:state.hero==='peaches'?2:2}
+ ];state.snail.active=false;save();updateSide();notify('Protect your garden! Aim with movement, press B / X to cast.');
+}
+function wardThreat(threat){
+ if(!threat||threat.hp<=0)return;
+ threat.hp-=1;
+ if(threat.hp>0){notify('The blight farmer staggers! One more light spell.');return;}
+ sound('snail');notify(threat.kind==='farmer'?'Blight farmer flees the valley!':'Crop pest driven away!');
+ if(state.quest===8&&state.defense.every(t=>t.hp<=0)){
+  questComplete();say('Devin the Elder Dog',['You did it! No pests or blight farmers will spoil this crop today.','The finest wizards protect what they grow. Next time, we will study enchanted mushrooms together.']);
+ }
+ save();updateSide();
+}
+function questComplete(why){
+ if(state.quest>=9)return;
+ const old=state.quest;state.quest++;state.xp+=10;
+ if([3,5,7,8].includes(old))state.skillPoints++;
+ state.journal.push('Day '+state.day+': '+QUESTS[old][0]);sound('quest');
+ notify('✦ Quest complete! +10 XP'+([3,5,7,8].includes(old)?' · +1 skill point':''));
+ if(state.quest===2&&state.seedFound){questComplete();return}
+ if(state.quest===3&&Object.keys(state.planted).length){questComplete();return}
+ if(state.quest===4&&Object.values(state.planted).some(p=>p.watered)){questComplete();return}
+ if(state.quest===8){
+  state.wand=true;save();say('Devin the Elder Dog',[
+   'Your patient paws have earned the GLIMMER WAND!',
+   'Blight farmer scouts and hungry pests are heading toward the garden! Your first guardian lesson begins now.',
+   'Aim by facing a direction, then use B (keyboard X or Backspace) to cast. Sunny fires farther. Peaches can bark away nearby pests.'
+  ],()=>{startDefense();});
+ }
+ save();updateSide();if(mode==='game')speakQuest();
+}
+function updateSide(){$('placeHud').textContent='✦ '+sceneNames[state.scene];$('dayHud').textContent='Day '+state.day+' · '+(state.settings.night?'☾ Evening':'☀ Morning');$('questSide').textContent=QUESTS[state.quest][1];$('hintSide').textContent=QUESTS[state.quest][2];const ribbon=$('questRibbon');if(ribbon){ribbon.textContent='❗ '+(state.quest<9?'QUEST '+(state.quest+1)+'/9 · ':'FREE PLAY · ')+QUESTS[state.quest][0];ribbon.setAttribute('aria-label','Open quest journal: '+QUESTS[state.quest][0]);}$('statusSide').innerHTML='🐾 '+HEROES[state.hero].name+' · '+HEROES[state.hero].ability+'<br>🪄 Wand: '+(state.wand?'Glimmer Wand':'not earned')+'<br>🌱 Seeds: '+state.seeds+' · 🍄 Spores: '+state.glowspores+' · ✦ XP: '+state.xp+'<br>🪙 Coins: '+state.coins+' · ✧ Skills: '+state.skillPoints+'<br>🍄 Glow magic: '+state.glowCharges+' free casts'+(state.quest===8?' <br>🛡 Crop threats remaining: '+state.defense.filter(t=>t.hp>0).length:'');$('healthBar').style.width=(100*state.heart/5)+'%';$('healthText').textContent='Hearts '+state.heart+'/5 · Focus '+state.wandCharge+'/5';}
 function near(x,y){return Math.abs(x-state.x)+Math.abs(y-state.y)<=1}function ahead(){let d=dirs[state.dir];return{x:state.x+d[0],y:state.y+d[1]}};
 function npcPos(n){let d=pedsOffset[n.id]||{x:0,y:0};return{x:n.x+d.x,y:n.y+d.y}}
 function npcAt(x,y){return(NPCS[state.scene]||[]).find(n=>{let p=npcPos(n);return p.x===x&&p.y===y})}
@@ -130,20 +184,55 @@ function solid(scene,x,y,jump=false){let m=world[scene];if(x<0||y<0||x>=m.w||y>=
 function move(dx,dy,jumping=false){if(mode!=='game')return;state.dir=dx===1?'right':dx===-1?'left':dy===1?'down':'up';let tx=state.x+dx,ty=state.y+dy;if(solid(state.scene,tx,ty,jumping)){if(world[state.scene].g[idx(world[state.scene],Math.max(0,Math.min(world[state.scene].w-1,tx)),Math.max(0,Math.min(world[state.scene].h-1,ty)))]==='arch')notify('Hold crouch (C) to slip beneath the arch.');return}state.x=tx;state.y=ty;state.time+=.006;if(state.time>20){state.time=9;state.settings.night=!state.settings.night}if(jumping)jumpUntil=performance.now()+420;for(const p of portals[state.scene]||[])if(p.x===state.x&&p.y===state.y){enter(p);break}if(state.scene==='farm'&&state.x===25&&state.y===6&&!state.seedFound)collectSeeds();updateSide();}
 function enter(p){clearWalkTarget();sound('door');state.scene=p.to;state.x=p.px;state.y=p.py;state.dir='down';if(!state.discovered.includes(p.to))state.discovered.push(p.to);if(p.to==='home'&&!state.flags.visitedHome){state.flags.visitedHome=true;if(state.quest===0)questComplete();say('Cottage',['Home! A bed for resting, a cookbook, a chest, and a little kitchen.','Try Z beside the bed to sleep and advance your garden by one day.']);}else if(p.to==='town'&&!state.flags.metPip&&state.quest>=5)notify('Find Pip in green by the seed shop!');else notify('Welcome to '+sceneNames[p.to]);save()}
 function collectSeeds(){state.seedFound=true;state.seeds+=3;if(state.skills.find)state.seeds+=2;sound('pickup');notify('Found '+(state.skills.find?5:3)+' Moonleaf seeds!');if(state.quest===2)questComplete();save()}
-function doNpc(n){if(n.id==='moss'){if(state.quest===1){say('Moss',['You must be the new keeper! I’m Moss, apprentice gardener and unofficial snail negotiator.','Follow the eastern trail. A pouch of magical Moonleaf seeds fell near the old grove.'],()=>{state.flags.metMoss=true;questComplete()})}else if(state.quest===7){questComplete()}else say('Moss',n.lines)}
-else if(n.id==='pip'){if(state.quest===5){say('Pip',['Welcome to Mosswick! This little village runs on friendship, baked goods and questionable magic.','Your Moonleaf is growing? Wonderful! Take this charm. Oh, and keep an eye on the snails near your garden.'],()=>{state.flags.metPip=true;state.coins+=4;state.snail.active=true;questComplete()})}else say('Pip',n.lines)}else if(n.id==='seedstore'){openPanel('seedShop')}else if(n.id==='baker'){state.heart=Math.min(5,state.heart+1);say('Bram',['Have a warm bun. Your heart feels a little lighter!','The best adventures include a snack break.']);updateSide()}else say(n.name,n.lines)}
-function doPlot(x,y){let k=key(x,y),p=state.planted[k];if(!p){if(state.seeds<=0){say('Garden','This bed is ready, but you do not have any Moonleaf seeds.');return}state.seeds--;state.planted[k]={stage:0,watered:false,health:3};sound('plant');say('Garden',['You tuck a Moonleaf seed into the soft soil.','A tiny blue spark appears where you planted it.'],()=>{if(state.quest===3)questComplete()});return}if(p.stage>=3){sound('harvest');state.harvest++;state.coins+=5;state.seeds+=1+(state.skills.find?1:0);delete state.planted[k];say('Harvest!',['You gathered '+(state.harvest)+' luminous Moonleaf flower'+(state.harvest===1?'':'s')+'!','+5 coins and '+(state.skills.find?2:1)+' seed'+(state.skills.find?'s':'')+'. The garden is ready for another planting.']);return}if(!p.watered){p.watered=true;p.health=Math.min(3,p.health+1+state.skills.green);sound('water');say('Garden',['A little water, a little patience.','The Moonleaf '+(['seed','sprout','stem'][p.stage])+' shimmers happily.'],()=>{if(state.quest===4)questComplete()})}else say('Garden','This plant has enough water today. Sleep in your cottage to begin a new day.')}
-function nextDay(){sound('ui');state.day++;state.settings.night=false;state.time=9;state.heart=5;state.wandCharge=5;let grew=0,ready=0;for(const k in state.planted){const p=state.planted[k];if(p.watered){p.stage=Math.min(3,p.stage+1+(state.skills.green&&state.day%3===0?1:0));p.health=Math.min(3,p.health+1);grew++;if(p.stage===3)ready++}else p.health=Math.max(1,p.health-1);p.watered=false}if(state.snail.active){state.snail.x=22;state.snail.y=15}save();say('Morning Bell',['Day '+state.day+' begins. '+(grew?grew+' planted Moonleaf '+(grew===1?'has':'have')+' grown.':'The garden waits for your seeds.')+(ready?' '+ready+' plant'+(ready>1?'s are':' is')+' ready to harvest!':'')]);updateSide()}
-function snailInteract(){if(state.quest===6){state.snail.active=false;state.snail.banish=performance.now()+8500;state.flags.snailShoo=true;sound('snail');say('Hungry Snail',['You crouch and softly wave your arms. The snail blinks, apologises (probably), and slides into the bushes.','The Moonleaf is safe! Moss will want to hear about this.'],()=>questComplete());return}state.snail.active=false;state.snail.banish=performance.now()+9000;sound('snail');notify('The snail retreats into the ferns!')}
+function doNpc(n){if(n.id==='devin'){if(state.quest===1){say('Devin the Elder Dog',['A new apprentice! I am Devin, the oldest dog mage in this valley.','Magical Moonleaf and moon-mushrooms grant great powers, but you must learn patience first. Follow the east trail to find a pouch of enchanted seeds.'],()=>{state.flags.metDevin=true;questComplete()})}else if(state.quest===7){questComplete()}else say('Devin the Elder Dog',n.lines)}
+else if(n.id==='pip'){if(state.quest===5){say('Pip the Herbalist Cat',['Welcome to Mosswick! Cats and dogs from across the valley come for our magical gardens.','Your Moonleaf is growing? Wonderful! Take this charm. But watch for hungry pests and blight farmers near your garden.'],()=>{state.flags.metPip=true;state.coins+=4;state.snail.active=true;questComplete()})}else say('Pip',n.lines)}else if(n.id==='seedstore'){openPanel('seedShop')}else if(n.id==='baker'){state.heart=Math.min(5,state.heart+1);say('Bram',['Have a warm bun. Your heart feels a little lighter!','The best adventures include a snack break.']);updateSide()}else say(n.name,n.lines)}
+function doPlot(x,y){
+ let k=key(x,y),p=state.planted[k];
+ if(!p){
+  const mushroom=state.selectedSeed==='glowcap';const count=mushroom?state.glowspores:state.seeds;
+  if(count<=0){say('Garden',mushroom?'No Glowcap spores. Juniper sells them in the seed shop.':'No Moonleaf seeds. You can find more or buy them from Juniper.');return}
+  if(mushroom)state.glowspores--;else state.seeds--;
+  state.planted[k]={kind:mushroom?'glowcap':'moonleaf',stage:0,watered:false,health:3};
+  sound('plant');say('Garden',['You plant '+(mushroom?'a Glowcap spore':'a Moonleaf seed')+' in the soft soil.','A tiny glimmer tells you something magical is growing.'],()=>{if(state.quest===3&&!mushroom)questComplete()});save();return;
+ }
+ const mushroom=p.kind==='glowcap';const name=mushroom?'Glowcap mushroom':'Moonleaf';
+ if(p.stage>=3){
+  sound('harvest');state.harvest++;
+  if(mushroom){state.glowCharges=Math.min(9,state.glowCharges+3);state.xp+=5;delete state.planted[k];say('Glowcap Harvest!',['You gathered a magical Glowcap!','+3 free wand casts and +5 XP. The spore glow protects your focus!']);}
+  else{state.coins+=5;state.seeds+=1+(state.skills.find?1:0);delete state.planted[k];say('Harvest!',['You gathered a luminous Moonleaf!','+5 coins and '+(state.skills.find?2:1)+' new seed'+(state.skills.find?'s':'')+'.']);}
+  save();updateSide();return;
+ }
+ if(!p.watered){p.watered=true;p.health=Math.min(3,p.health+1+state.skills.green);sound('water');say('Garden',['The '+name+' shimmers as you water it.','Sleep in your cottage to help this plant grow.'],()=>{if(state.quest===4)questComplete()});save()}
+ else say('Garden','This plant has enough water today. Rest to begin a new day.');
+}
+
+function nextDay(){sound('ui');state.day++;state.settings.night=false;state.time=9;state.heart=5;state.wandCharge=5;let grew=0,ready=0;for(const k in state.planted){const p=state.planted[k];if(p.watered){p.stage=Math.min(3,p.stage+1+(state.skills.green&&state.day%3===0?1:0));p.health=Math.min(3,p.health+1);grew++;if(p.stage===3)ready++}else p.health=Math.max(1,p.health-1);p.watered=false}if(state.snail.active){state.snail.x=22;state.snail.y=15}save();say('Morning Bell',['Day '+state.day+' begins. '+(grew?grew+' magical crop'+(grew===1?' has':'s have')+' grown.':'The garden waits for your seeds.')+(ready?' '+ready+' plant'+(ready>1?'s are':' is')+' ready to harvest!':'')]);updateSide()}
+function snailInteract(){if(state.quest===6){state.snail.active=false;state.snail.banish=performance.now()+8500;state.flags.snailShoo=true;sound('snail');say('Hungry Snail',['You crouch and softly wave your arms. The snail blinks, apologises (probably), and slides into the bushes.','The Moonleaf is safe! Devin will want to hear about this.'],()=>questComplete());return}state.snail.active=false;state.snail.banish=performance.now()+9000;sound('snail');notify('The snail retreats into the ferns!')}
 function interact(){if(mode==='dialog'){nextLine();return}if(mode==='panel'){closeOverlay();return}if(mode!=='game')return;interactUntil=performance.now()+300;let a=ahead();let npc=(NPCS[state.scene]||[]).find(n=>{let p=npcPos(n);return near(p.x,p.y)&&(p.x===a.x&&p.y===a.y)});if(!npc)npc=(NPCS[state.scene]||[]).find(n=>{let p=npcPos(n);return near(p.x,p.y)});if(npc){doNpc(npc);return}
  if(state.scene==='farm'&&state.snail.active&&near(state.snail.x,state.snail.y)){snailInteract();return}
  if(state.scene==='farm'){let plot=PLOTS.find(p=>p.x===a.x&&p.y===a.y)||PLOTS.find(p=>p.x===state.x&&p.y===state.y);if(plot){doPlot(plot.x,plot.y);return}if(near(25,6)&&!state.seedFound){collectSeeds();return}}
- if(state.scene==='home'){if(near(4,5)){say('Cozy Bed',['A little rest makes crops grow. Tomorrow is only a nap away.'],()=>nextDay());return}if(near(7,3)){say('Old Spellbook',['The first lesson of every Weed Wizard: grow before you glow.','Three magical schools wait in your skill tree: Rootcraft, Lightcraft and Wayfinding.']);return}if(near(14,10)){say('Storage Chest',['Your spell chest is empty for now. Someday it may hold wands, trinkets and unusual seeds.']);return}if(near(14,4)){say('Kitchen',['There is bread, herbal tea and an incredibly suspicious glowing kettle.']);return}}
+ if(state.scene==='home'){if(near(4,5)){say('Cozy Bed',['A little rest makes crops grow. Tomorrow is only a nap away.'],()=>nextDay());return}if(near(7,3)){say('Old Spellbook',['The first lesson of every valley wizard: grow before you glow.','Three magical schools wait in your skill tree: Rootcraft, Lightcraft and Wayfinding.']);return}if(near(14,10)){say('Storage Chest',['Your spell chest is empty for now. Someday it may hold wands, trinkets and unusual seeds.']);return}if(near(14,4)){say('Kitchen',['There is bread, herbal tea and an incredibly suspicious glowing kettle.']);return}}
  if(state.scene==='shop'&&((a.y>=7&&a.y<=8&&a.x>=7&&a.x<=12)||(state.y===9&&state.x>=7&&state.x<=12))){openPanel('seedShop');return}
  if(state.scene==='bakery'&&near(12,6)){if(state.coins>=2){sound('purchase');state.coins-=2;state.heart=5;say('Bakery',['A fresh honey bun restores your hearts!','That costs 2 coins.'])}else say('Bakery','The honey bun costs 2 coins.');return}
  if(state.scene==='farm'&&near(4,12)){say('Wooden Sign',['THE GREEN PATCH','Keep your garden safe. Make magic kindly.']);return}if(state.scene==='town'&&near(5,11)){say('Town Sign',['MOSSWICK VILLAGE','West: Gardens · North: Shops · East: Starlit Woods (coming soon)']);return}if(state.scene==='town'&&near(26,20)){say('Library',['The old library is being renovated. Strange new stories will open in a later chapter.']);return}
- say('Apprentice','Nothing unusual here... yet.');}
-function cast(){if(mode==='dialog'){nextLine();return}if(mode==='panel'){closeOverlay();return}if(mode!=='game')return;if(!state.wand){notify('X will cast light once you earn your wand (touchscreen: B).');return}if(state.wandCharge<1){notify('Your wand needs a moment to recharge.');return}state.wandCharge--;castUntil=performance.now()+340;let d=dirs[state.dir];shots.push({x:state.x+.5,y:state.y+.5,dx:d[0],dy:d[1],life:state.skills.light?18:11});sound('cast');updateSide()}
+ say(HEROES[state.hero].name,'Nothing unusual here... yet.');}
+function cast(){
+ if(mode==='dialog'){nextLine();return}if(mode==='panel'){closeOverlay();return}if(mode!=='game')return;
+ if(!state.wand){notify('Your wand unlocks after meeting Devin (B / keyboard X).');return}
+ if(state.wandCharge<1&&state.glowCharges<1){notify('Your wand needs a moment to recharge.');return}
+ state.castCount=(state.castCount||0)+1;
+ const isSunny=state.hero==='sunny';const freeCast=isSunny&&state.castCount%3===0;
+ const glowing=state.glowCharges>0;if(glowing)state.glowCharges--;else state.wandCharge-=freeCast?0:1;
+ castUntil=performance.now()+340;let d=dirs[state.dir];
+ shots.push({x:state.x+.5,y:state.y+.5,dx:d[0],dy:d[1],life:(state.skills.light?18:11)+(isSunny?7:0)});
+ sound('cast');
+ if(state.hero==='peaches'&&state.quest===8){
+  let barkCount=0;
+  for(const t of state.defense){if(t.hp>0&&Math.hypot(t.x-state.x,t.y-state.y)<=2.4){wardThreat(t);barkCount++}}
+  if(barkCount)notify('Peaches uses Guardian Bark!');
+ }
+ updateSide();
+}
 function jump(){if(mode!=='game')return;let d=dirs[state.dir];jumpUntil=performance.now()+430;if(world[state.scene].g[idx(world[state.scene],Math.max(0,Math.min(world[state.scene].w-1,state.x+d[0])),Math.max(0,Math.min(world[state.scene].h-1,state.y+d[1])))]==='log'){move(d[0],d[1],true);notify('Hopped over a fallen log!')}else{sound('jump')}}
 // Pointer navigation: shortest accessible four-way route through the actual collision map.
 // NPCs and plots can be tapped: approach from a valid adjacent cell and interact.
@@ -154,7 +243,8 @@ function tapPathTo(wx,wy){
  let isNpc=!!npcAt(wx,wy),isPlot=state.scene==='farm'&&PLOTS.some(p=>p.x===wx&&p.y===wy);
  let isSnail=state.scene==='farm'&&state.snail.active&&state.snail.x===wx&&state.snail.y===wy;
  let isShopCounter=state.scene==='shop'&&wx>=7&&wx<=12&&wy>=7&&wy<=8;
- let actionable=isNpc||isPlot||isSnail||isShopCounter;
+ let isDefenseThreat=state.scene==='farm'&&state.quest===8&&state.defense.some(t=>t.hp>0&&t.x===wx&&t.y===wy);
+ let actionable=isNpc||isPlot||isSnail||isShopCounter||isDefenseThreat;
  if(state.x===wx&&state.y===wy){if(actionable)interact();else clearWalkTarget();return;}
  const origin=key(state.x,state.y),visited=new Map([[origin,null]]),queue=[[state.x,state.y]],reachable=[];
  for(let i=0;i<queue.length;i++){
@@ -183,7 +273,9 @@ function finishTapWalk(){
  if(Math.abs(state.x-x)+Math.abs(state.y-y)<=1){
   const dx=x-state.x,dy=y-state.y;
   if(dx>0)state.dir='right';else if(dx<0)state.dir='left';else if(dy>0)state.dir='down';else if(dy<0)state.dir='up';
-  if(target.scene==='shop'&&x>=7&&x<=12&&y>=7&&y<=8)openPanel('seedShop');else interact();
+  if(target.scene==='shop'&&x>=7&&x<=12&&y>=7&&y<=8)openPanel('seedShop');
+  else if(target.scene==='farm'&&state.quest===8&&state.defense.some(t=>t.hp>0&&t.x===x&&t.y===y))notify('Facing a crop threat! Press B (keyboard X) to cast.');
+  else interact();
  }
 }
 function stepTapWalk(ms){
@@ -214,8 +306,29 @@ function update(dt,now){
    }
    if(near(sn.x,sn.y)&&state.quest!==6&&Math.random()<.3){state.heart=Math.max(1,state.heart-1);notify('A snail bumps into your boots!');updateSide();}
   }
-  if(!state.snail.active&&state.snail.banish>0&&now>state.snail.banish&&state.quest>=8){state.snail.active=true;state.snail.x=22;state.snail.y=15;state.snail.banish=0;}
-  if(now-lastRegen>4000){lastRegen=now;state.wandCharge=Math.min(5,state.wandCharge+1);updateSide();}
+  // The crop-defense mission has consequences without making the tutorial fail:
+  // enemies move toward planted beds and nibble plants down to one health.
+  if(state.scene==='farm'&&state.quest===8&&now-lastDefense>3400){
+   lastDefense=now;
+   const living=PLOTS.filter(p=>state.planted[key(p.x,p.y)]);
+   const target=living[0]||{x:16,y:14};
+   for(const foe of state.defense){
+    if(foe.hp<=0)continue;
+    const dist=Math.abs(foe.x-target.x)+Math.abs(foe.y-target.y);
+    if(dist<=2){
+     const plant=state.planted[key(target.x,target.y)];
+     if(plant){plant.health=Math.max(1,plant.health-1);notify('A crop pest is nibbling at your garden! Cast B to repel it.');}
+    }else{
+     const dx=Math.sign(target.x-foe.x),dy=Math.sign(target.y-foe.y);
+     let xx=foe.x,yy=foe.y;
+     if(Math.abs(target.x-foe.x)>Math.abs(target.y-foe.y))xx+=dx;else yy+=dy;
+     if(!solid('farm',xx,yy)){foe.x=xx;foe.y=yy;}
+    }
+   }
+   updateSide();save();
+  }
+  if(!state.snail.active&&state.snail.banish>0&&now>state.snail.banish&&state.quest>=9){state.snail.active=true;state.snail.x=22;state.snail.y=15;state.snail.banish=0;}
+  if(now-lastRegen>(state.hero==='sunny'?2500:4000)){lastRegen=now;state.wandCharge=Math.min(5,state.wandCharge+1);updateSide();}
   if(now-lastMoveNpc>2800){
    lastMoveNpc=now;
    for(const n of NPCS.town.filter(n=>n.wander)){
@@ -226,6 +339,9 @@ function update(dt,now){
   }
   for(const shot of shots){
    shot.x+=shot.dx*dt*.014;shot.y+=shot.dy*dt*.014;shot.life-=dt*.012;
+   if(state.scene==='farm'&&state.quest===8&&shot.life>0){
+    for(const t of state.defense){if(t.hp>0&&Math.hypot(shot.x-t.x-.5,shot.y-t.y-.5)<.86){shot.life=0;wardThreat(t);break}}
+   }
    if(state.scene==='farm'&&state.snail.active&&Math.hypot(shot.x-state.snail.x-.5,shot.y-state.snail.y-.5)<1){
     state.snail.active=false;state.snail.banish=now+9000;state.snail.x=22;state.snail.y=15;shot.life=0;
     notify('Light magic gently guides the snail away!');
@@ -295,30 +411,29 @@ function drawFurniture(camX,camY){
  }
 }
 function drawWizard(sx,sy,now){
- let motion=mode==='game'&&[...held].some(v=>dirs[v]);
- let frame=motion?(['walk1','walk2','walk3','walk2'][Math.floor(now/145)%4]):'idle';
- let pose=state.dir+'_'+frame;
+ let motion=mode==='game'&&([ ...held].some(v=>dirs[v])||!!tapWalk);
+ let frame=motion?1+Math.floor(now/155)%2:0;
  let airborne=now<jumpUntil?Math.sin(Math.PI*(1-(jumpUntil-now)/430))*9:0;
- if(held.has('crouch'))pose='crouch';else if(airborne>0)pose='jump';else if(now<castUntil)pose=state.dir+'_cast';else if(now<interactUntil)pose=state.dir+'_interact';
  ctx.fillStyle='#263c2c77';ctx.fillRect(sx+4,sy+T-3,T-8,3);
- if(!blit('player',pose,sx-6,sy-19-airborne,T+12,T+20)){
-  ctx.fillStyle='#275542';ctx.fillRect(sx+4,sy-5,T-8,T+3);
-  ctx.fillStyle='#f4d39e';ctx.fillRect(sx+7,sy-14,10,10);
+ const who=HEROES[state.hero]?state.hero:'sunny';
+ if(!blit('animals',who+'_'+state.dir+'_'+frame,sx-9,sy-21-airborne,T+18,T+22)){
+  ctx.fillStyle=who==='sunny'?'#cf884d':'#e8b977';ctx.fillRect(sx+4,sy-5,T-8,T+3);
  }
- if(state.wand&&pose!=='crouch')blit('items','wand',sx+16,sy-11-airborne,12,24);
+ if(state.wand)blit('items','wand',sx+15,sy-12-airborne,11,24);
 }
-const npcSprite={moss:'moss',pip:'pip',baker:'seed_merchant',ped1:'traveler',ped2:'child',ped3:'villager',ped4:'child',ped5:'seed_merchant',ped6:'traveler',seedstore:'seed_merchant',baker2:'villager'};
+const npcSprite={devin:'devin',pip:'pip',baker:'baker',ped1:'ped1',ped2:'ped2',ped3:'ped3',ped4:'ped4',ped5:'ped5',ped6:'ped6',seedstore:'seedstore',baker2:'baker2'};
 function drawNpc(n,sx,sy,now){
- const which=npcSprite[n.id]||'villager';
- let pose=n.wander&&Math.floor(now/380)%2===0?'walk1':'front';
+ const who=npcSprite[n.id]||'pip';
+ const frame=n.wander&&Math.floor(now/310)%2===0?1:0;
  ctx.fillStyle='#2a382380';ctx.fillRect(sx+4,sy+T-3,T-8,3);
- if(!blit('npcs',which+'_'+pose,sx-7,sy-20,T+14,T+20)){
-  ctx.fillStyle=n.color||'#557953';ctx.fillRect(sx+5,sy-5,T-10,T+2);
+ if(!blit('animals',who+'_down_'+frame,sx-9,sy-21,T+18,T+22)){
+  ctx.fillStyle=n.species==='dog'?'#bb9473':'#cda779';ctx.fillRect(sx+5,sy-5,T-10,T+2);
  }
 }
 function drawPlant(p,sx,sy,now){
  const growth=['crop_0','crop_1','crop_2','crop_4'][Math.min(3,p.stage)];
- if(!blit('items',growth,sx+1,sy-12,T-2,T+12)){
+ const drawn=p.kind==='glowcap'?blit('mushrooms','glowcap_'+Math.min(3,p.stage),sx+1,sy-17,T-2,T+17):blit('items',growth,sx+1,sy-12,T-2,T+12);
+ if(!drawn){
   ctx.fillStyle='#79c573';ctx.fillRect(sx+9,sy+8,6,11);
  }
  if(p.watered){ctx.fillStyle='#9ddbf4';ctx.fillRect(sx+20,sy+17,3,5)}
@@ -334,11 +449,12 @@ function nearestQuestPlot(needsWater){
 function questTarget(){
  let q=state.quest, target=null;
  if(q===0)target={scene:'farm',x:6,y:9,label:'COTTAGE'};
- if(q===1||q===7)target={scene:'farm',x:npcPos(NPCS.farm[0]).x,y:npcPos(NPCS.farm[0]).y,label:'MOSS'};
+ if(q===1||q===7)target={scene:'farm',x:npcPos(NPCS.farm[0]).x,y:npcPos(NPCS.farm[0]).y,label:'DEVIN'};
  if(q===2)target={scene:'farm',x:25,y:6,label:'SEEDS'};
  if(q===3||q===4){let p=nearestQuestPlot(q===4);if(p)target={scene:'farm',x:p.x,y:p.y,label:q===3?'PLANT':'WATER'}}
  if(q===5)target={scene:'town',...npcPos(NPCS.town[0]),label:'PIP'};
  if(q===6)target={scene:'farm',x:state.snail.x,y:state.snail.y,label:'SNAIL'};
+ if(q===8){const t=state.defense.filter(t=>t.hp>0).sort((a,b)=>Math.hypot(a.x-state.x,a.y-state.y)-Math.hypot(b.x-state.x,b.y-state.y))[0];if(t)target={scene:'farm',x:t.x,y:t.y,label:'PEST'};}
  if(!target)return null;
  if(target.scene!==state.scene){
   let link=(portals[state.scene]||[]).find(p=>p.to===target.scene);
@@ -350,7 +466,7 @@ function questTarget(){
  return target;
 }
 function drawQuestMarker(camX,camY,now){
- if(!state.settings.questMarkers||state.quest>=8)return;
+ if(!state.settings.questMarkers||state.quest>=9)return;
  const target=questTarget();if(!target)return;
  const px=(target.x+.5)*T-camX,py=target.y*T-camY;
  const x=Math.round(Math.max(16,Math.min(W-16,px)));
@@ -386,6 +502,8 @@ function render(now){
   blit('world','sign',Math.floor(32*T-camX),Math.floor(11*T-camY)-14,T+7,T+15);
  }
  if(state.scene==='town')blit('world','sign',Math.floor(5*T-camX),Math.floor(11*T-camY)-13,T+7,T+14);
+ // Crop-defense threats: three creatures and a masked blight-farmer dog.
+ if(state.scene==='farm'&&state.quest===8){for(const foe of state.defense){if(foe.hp<=0)continue;const sx=Math.round(foe.x*T-camX),sy=Math.round(foe.y*T-camY);if(foe.kind==='farmer'){blit('animals','ped6_down_0',sx-9,sy-21,T+18,T+22);}else{blit('items',foe.kind==='snail'?'snail_idle':'beetle_idle',sx-5,sy-4,T+10,T+9);}ctx.fillStyle='#f8d779';ctx.font='bold 11px monospace';ctx.fillText('!',sx+10,sy-5);}}
  // Large scenery must be drawn only after every ground tile, otherwise grass
  // tiles overwrite the canopy. Sort by feet Y for proper top-down occlusion.
  const actors=[];
@@ -423,14 +541,14 @@ function render(now){
  // Quest text is in the sidebar / journal; do not cover exits or the player.
 }
 function openPanel(name){if(mode==='title'||mode==='dialog')return;mode='panel';panelName=name;held.clear();clearWalkTarget();syncTouchControls();let content='',heading={bag:'🎒 Satchel',quests:'📜 Quest Journal',map:'🗺 World Map',skills:'✦ Apprentice Skill Tree',settings:'⚙ Game Settings',pause:'Ⅱ Paused',ending:'✦ Chapter Complete',seedShop:'🌱 Juniper’s Moonleaf Seeds'}[name]||name;
- if(name==='bag'){content=`<p>Carry your findings. Your garden is your main source of future riches.</p><div class="entry">🌱 <strong>Moonleaf seeds:</strong> ${state.seeds}<br>🌼 <strong>Moonleaf harvested:</strong> ${state.harvest}<br>🪙 <strong>Coins:</strong> ${state.coins}<br>🪄 <strong>Glimmer wand:</strong> ${state.wand?'Equipped! B casts light':'Locked until the final quest.'}<br>✨ <strong>Apprentice XP:</strong> ${state.xp}</div><p class="tiny">Plant seeds with Z while facing an empty brown garden bed (touchscreen: A).</p>`}
- else if(name==='seedShop'){content=`<p>Juniper has a fresh harvest of magical seeds. Choose a purchase or press Close to keep exploring.</p><div class="entry">🪙 <strong>Your coins: ${state.coins}</strong> · 🌱 Seeds in bag: ${state.seeds}</div><div class="stack"><button class="primary" data-buy="one" ${state.coins<3?'disabled':''}>🌱 Buy 1 Moonleaf seed · 3 coins</button><button class="primary" data-buy="three" ${state.coins<8?'disabled':''}>🌿 Buy 3 Moonleaf seeds · 8 coins</button><button class="secondary" data-command="close">Done shopping</button></div><p class="tiny">You can collect seed satchels in the grove or earn more coins by harvesting Moonleaf.</p>`}
+ if(name==='bag'){content=`<p>Carry your findings. Your garden is your main source of future riches.</p><div class="entry">🌱 <strong>Moonleaf seeds:</strong> ${state.seeds}<br>🍄 <strong>Glowcap spores:</strong> ${state.glowspores}<br>✨ <strong>Glowcast charges:</strong> ${state.glowCharges}<br>🌼 <strong>Moonleaf harvested:</strong> ${state.harvest}<br>🪙 <strong>Coins:</strong> ${state.coins}<br>🪄 <strong>Glimmer wand:</strong> ${state.wand?'Equipped! B casts light':'Earn it from Devin.'}<br>✨ <strong>Apprentice XP:</strong> ${state.xp}</div><div class="stack"><button class="secondary" data-seed="moonleaf" ${state.selectedSeed==='moonleaf'?'disabled':''}>${state.selectedSeed==='moonleaf'?'✓ ':''}Equip Moonleaf seeds</button><button class="secondary" data-seed="glowcap" ${state.selectedSeed==='glowcap'?'disabled':''}>${state.selectedSeed==='glowcap'?'✓ ':''}Equip Glowcap spores</button></div><p class="tiny">Equip a seed type in your bag. Plant with A (keyboard Z / Enter). Glowcaps give three focus-free spells when harvested.</p>`}
+ else if(name==='seedShop'){content=`<p>Juniper has a fresh harvest of magical seeds. Choose a purchase or press Close to keep exploring.</p><div class="entry">🪙 <strong>Coins: ${state.coins}</strong> · 🌱 Moonleaf: ${state.seeds} · 🍄 Glowcap: ${state.glowspores}</div><div class="stack"><button class="primary" data-buy="one" ${state.coins<3?'disabled':''}>🌱 Buy 1 Moonleaf seed · 3 coins</button><button class="primary" data-buy="three" ${state.coins<8?'disabled':''}>🌿 Buy 3 Moonleaf seeds · 8 coins</button><button class="primary" data-buy="glowcap" ${state.coins<5?'disabled':''}>🍄 Buy 1 Glowcap spore · 5 coins</button><button class="secondary" data-command="close">Done shopping</button></div><p class="tiny">You can collect seed satchels in the grove or earn more coins by harvesting Moonleaf.</p>`}
  else if(name==='quests'){content='<p>Your quest log keeps track of the little things that become big things.</p>'+QUESTS.map((q,i)=>`<div class="entry ${i<state.quest?'done':i===state.quest?'activeQuest':''}">${i<state.quest?'✓':i===state.quest?'❗ ACTIVE QUEST':'🔒'} <strong>${htmlEsc(q[0])}</strong><br>${htmlEsc(q[1])}${i===state.quest?'<br><em>'+htmlEsc(q[2])+'</em>':''}</div>`).join('')}
  else if(name==='map'){content=`<p>Discover locations at your own pace. New places will be added as the story grows.</p><div class="entry">🏡 <strong>The Green Patch</strong> ${state.scene==='farm'?'(You are here)':''}<br>↳ Your cottage and Moonleaf beds</div><div class="entry">🏘 <strong>Mosswick Village</strong> ${state.discovered.includes('town')?'✓ discovered':'◇ not visited'}<br>↳ Seed shop, bakery, friendly villagers</div><div class="entry">🌲 <strong>Starlit Woods</strong> 🔒 Later chapter<br>↳ A forest full of unusual seeds</div><div class="entry">🔮 <strong>Wizard Academy</strong> 🔒 Later chapter<br>↳ Where advanced magic is taught</div>`}
  else if(name==='skills'){const skillInfo=[['green','🌿 Rootcraft','Watering restores additional plant health; every third morning watered plants grow faster.'],['light','✧ Lightcraft','Light projectiles reach farther before disappearing.'],['find','👣 Wayfinding','Gain an extra seed from each harvest and two extra seeds from future satchels.']];content=`<p>Available skill points: <strong>${state.skillPoints}</strong>. Earn points by finishing apprenticeship milestones.</p>`+skillInfo.map(([id,n,d])=>`<div class="entry"><strong>${n}</strong> · ${state.skills[id]?'UNLOCKED':'LOCKED'}<br>${d}<br><button class="secondary" data-skill="${id}" ${state.skills[id]||!state.skillPoints?'disabled':''}>${state.skills[id]?'Learned':'Learn · 1 point'}</button></div>`).join('')}
  else if(name==='settings'){content=`<p>All progress is saved on this device when browser storage is available.</p><div class="settingsGroup"><strong>🔊 Spoken dialogue and instructions</strong><label><input type="checkbox" data-setting="narration" ${state.settings.narration?'checked':''} ${canSpeak()?'':'disabled'}> Read dialogue and tutorials aloud (default off)</label><label><input type="checkbox" data-setting="narrateQuests" ${state.settings.narrateQuests?'checked':''}> Automatically read new quest instructions</label><label class="volumeLabel">Speaking speed <input type="range" min="65" max="130" step="5" data-volume="voiceRate" value="${Math.round((state.settings.voiceRate??.9)*100)}" aria-label="Speaking speed"><span id="voiceRateReadout">${Math.round((state.settings.voiceRate??.9)*100)}%</span></label><div class="speechButtons"><button class="secondary" data-command="readQuest" ${canSpeak()?'':'disabled'}>🔊 Read current quest</button><button class="secondary" data-command="testVoice" ${canSpeak()?'':'disabled'}>▶ Test voice</button><button class="secondary" data-command="stopVoice">■ Stop</button></div><p class="tiny">${canSpeak()?'Uses built-in device voices. No account, API key or uploads required.':'This browser does not expose speech synthesis. Written dialogue still works.'} On mobile, audio may require a tap.</p></div><div class="line"></div><label><input type="checkbox" data-setting="questMarkers" ${state.settings.questMarkers?'checked':''}> Show bright in-world quest markers and directions</label><label><input type="checkbox" data-setting="music" ${state.settings.music?'checked':''}> Play sleepy lo-fi garden music</label><label class="volumeLabel">Music volume <input type="range" min="0" max="100" step="5" data-volume="musicVolume" value="${Math.round((state.settings.musicVolume??.38)*100)}" aria-label="Music volume"><span id="musicVolumeReadout">${Math.round((state.settings.musicVolume??.38)*100)}%</span></label><label><input type="checkbox" data-setting="sfx" ${state.settings.sfx?'checked':''}> Play retro sound effects</label><label><input type="checkbox" data-setting="pixelArt" ${state.settings.pixelArt?'checked':''}> Use original PNG pixel artwork</label><label><input type="checkbox" data-setting="night" ${state.settings.night?'checked':''}> Evening colour palette</label><label><input type="checkbox" data-setting="showTouch" ${state.settings.showTouch?'checked':''}> Show on-screen touch controls</label><div class="line"></div><div class="stack"><button class="primary" data-command="save">Save progress now</button><button class="secondary" data-command="reset">Reset adventure</button></div><p class="artInfo">Complete art assets are bundled locally. Disable PNG pixel artwork above to compare the debug geometry.</p><p class="tiny">Offline mode: the game itself needs no network connection. Mobile browsers may restrict file:// access, so use a local Wi-Fi server when testing on phones or tablets.</p>`}
  else if(name==='pause'){content=`<p>The world is waiting. Rest here as long as you need.</p><div class="stack"><button class="primary" data-command="resume">Continue exploring</button><button class="secondary" data-command="save">Save game</button><button class="secondary" data-command="title">Return to title</button></div>`}
- else if(name==='ending'){content=`<p><strong>Congratulations, apprentice!</strong> You completed the opening chapter and earned the Glimmer Wand.</p><div class="entry">✦ 8 quests explored<br>🪄 Light spell unlocked<br>🌱 Garden and crop lifecycle available<br>🏘 Cottage and village ready to explore</div><p><strong>Keep playing:</strong> press X to cast (touch B), sleep in your bed to grow Moonleaf, harvest mature plants, buy seeds from Pip and spend your skill points.</p><p class="tiny">In the full game, your next destination will be Starlit Woods and the Wizard Academy.</p>`}
+ else if(name==='ending'){content=`<p><strong>Congratulations, apprentice!</strong> You earned your Glimmer Wand and protected the Green Patch!</p><div class="entry">✦ 9 quests explored<br>🪄 Light spell unlocked<br>🌱 Garden and crop lifecycle available<br>🏘 Cottage and village ready to explore</div><p><strong>Keep playing:</strong> press X to cast (touch B), sleep in your bed to grow Moonleaf, harvest mature plants, buy seeds from Juniper and spend your skill points.</p><p class="tiny">Grow Glowcap mushrooms for extra spell energy. Later, your destination will be Starlit Woods and the Wizard Academy.</p>`}
  setOverlay(`<div class="panelBox" role="dialog" aria-label="${heading}"><div class="toprow"><h2>${heading}</h2><button class="secondary" data-command="close">✕</button></div>${content}</div>`);syncTouchControls()}
 function press(action){if(action==='interact')interact();else if(action==='cast')cast();else if(action==='jump')jump();else if(action==='crouch'){} }
 function keyDown(e){const k=e.key.toLowerCase();let d=({w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'})[k];if(d){e.preventDefault();clearWalkTarget();held.add(d);if(!e.repeat){move(...dirs[d]);lastStep=performance.now()}return}if([' ','enter','z','x','backspace','escape','i','q','m','k','c'].includes(k))e.preventDefault();if(k==='c')held.add('crouch');if(e.repeat)return;if(k==='z'||k==='enter')press('interact');else if(k==='x'||k==='backspace')press('cast');else if(k===' ')press('jump');else if(k==='escape'){if(mode==='panel')closeOverlay();else if(mode==='dialog')nextLine();else if(mode==='game')openPanel('pause')}else if(k==='i')openPanel('bag');else if(k==='q')openPanel('quests');else if(k==='m')openPanel('map');else if(k==='k')openPanel('skills')}
@@ -440,7 +558,7 @@ const touchHeld=new Map();document.addEventListener('pointerdown',e=>{let btn=e.
 document.addEventListener('change',e=>{let setting=e.target&&e.target.dataset&&e.target.dataset.setting;if(!setting)return;state.settings[setting]=!!e.target.checked;if(setting==='music')startMusic();if(setting==='narration'){try{localStorage.setItem('ww-voice-enabled',String(state.settings.narration))}catch(_){}if(state.settings.narration)speakText('Narration enabled. Your game dialogue and quest instructions can now be read aloud.',true);else stopSpeech()}syncTouchControls();save();updateSide()});
 document.addEventListener('input',e=>{const vol=e.target?.dataset?.volume;if(vol==='musicVolume'){state.settings.musicVolume=Number(e.target.value)/100;if(bgm)bgm.volume=state.settings.musicVolume;const n=$('musicVolumeReadout');if(n)n.textContent=e.target.value+'%';}else if(vol==='voiceRate'){state.settings.voiceRate=Number(e.target.value)/100;const n=$('voiceRateReadout');if(n)n.textContent=e.target.value+'%';}});
 document.addEventListener('change',e=>{if(['musicVolume','voiceRate'].includes(e.target?.dataset?.volume))save();});
-document.addEventListener('click',e=>{let btn=e.target.closest('button[data-start],button[data-panel],button[data-act],button[data-command],button[data-skill],button[data-buy]');if(!btn)return;if(btn.dataset.command==='toggleNarration'){state.settings.narration=!state.settings.narration;try{localStorage.setItem('ww-voice-enabled',String(state.settings.narration))}catch(_){}if(state.settings.narration)speakText('Narration is on. I will read the story as you play.',true);else stopSpeech();titleMarkup=titleMarkup.replace(/Narration (ON|OFF)/g,'Narration '+(state.settings.narration?'ON':'OFF'));$('narrationStart').textContent='🔊 Narration '+(state.settings.narration?'ON':'OFF');return}if(btn.dataset.buy){const quantity=btn.dataset.buy==='three'?3:1,cost=quantity===3?8:3;if(mode==='panel'&&panelName==='seedShop'&&state.coins>=cost){state.coins-=cost;state.seeds+=quantity;sound('purchase');save();updateSide();openPanel('seedShop');notify('Purchased '+quantity+' Moonleaf seed'+(quantity===1?'':'s')+'!')}return}if(btn.dataset.start){begin(btn.dataset.start==='continue');return}if(btn.dataset.panel){openPanel(btn.dataset.panel);return}if(btn.dataset.act){press(btn.dataset.act);return}if(btn.dataset.skill){let s=btn.dataset.skill;if(state.skillPoints>0&&!state.skills[s]){state.skills[s]=1;state.skillPoints--;sound('quest');save();openPanel('skills');updateSide()}return}if(btn.dataset.command){let c=btn.dataset.command;if(c==='readQuest'){speakQuest(true);return}if(c==='testVoice'){speakText('Hello apprentice. This is your magical garden. Follow the golden exclamation mark to find your next quest.',true);return}if(c==='stopVoice'){stopSpeech();return}if(c==='close'||c==='resume')closeOverlay();if(c==='save'){let ok=save();notify(ok?'Game saved!':'Storage blocked by browser. Try local server.');closeOverlay()}if(c==='title'){save();title()}if(c==='reset'){if(confirm('Start over? This will erase your local save.')){try{localStorage.removeItem(SAVE)}catch(_){}state=fresh();title()}}return}});
+document.addEventListener('click',e=>{let btn=e.target.closest('button[data-start],button[data-hero],button[data-panel],button[data-act],button[data-command],button[data-skill],button[data-buy],button[data-seed]');if(!btn)return;if(btn.dataset.seed){if(mode==='panel'&&panelName==='bag'){state.selectedSeed=btn.dataset.seed;save();openPanel('bag');}return;}if(btn.dataset.hero){chosenHero=btn.dataset.hero;updateHeroChoice();sound('ui');return;}if(btn.dataset.command==='toggleNarration'){state.settings.narration=!state.settings.narration;try{localStorage.setItem('ww-voice-enabled',String(state.settings.narration))}catch(_){}if(state.settings.narration)speakText('Narration is on. I will read the story as you play.',true);else stopSpeech();titleMarkup=titleMarkup.replace(/Narration (ON|OFF)/g,'Narration '+(state.settings.narration?'ON':'OFF'));$('narrationStart').textContent='🔊 Narration '+(state.settings.narration?'ON':'OFF');return}if(btn.dataset.buy){const glow=btn.dataset.buy==='glowcap',quantity=btn.dataset.buy==='three'?3:1,cost=glow?5:quantity===3?8:3;if(mode==='panel'&&panelName==='seedShop'&&state.coins>=cost){state.coins-=cost;if(glow)state.glowspores++;else state.seeds+=quantity;sound('purchase');save();updateSide();openPanel('seedShop');notify(glow?'Purchased a Glowcap spore!':'Purchased '+quantity+' Moonleaf seed'+(quantity===1?'':'s')+'!')}return}if(btn.dataset.start){begin(btn.dataset.start==='continue');return}if(btn.dataset.panel){openPanel(btn.dataset.panel);return}if(btn.dataset.act){press(btn.dataset.act);return}if(btn.dataset.skill){let s=btn.dataset.skill;if(state.skillPoints>0&&!state.skills[s]){state.skills[s]=1;state.skillPoints--;sound('quest');save();openPanel('skills');updateSide()}return}if(btn.dataset.command){let c=btn.dataset.command;if(c==='readQuest'){speakQuest(true);return}if(c==='testVoice'){speakText('Welcome to Wiz Dog. This is your magical garden. Follow the golden exclamation mark to find your next quest.',true);return}if(c==='stopVoice'){stopSpeech();return}if(c==='close'||c==='resume')closeOverlay();if(c==='save'){let ok=save();notify(ok?'Game saved!':'Storage blocked by browser. Try local server.');closeOverlay()}if(c==='title'){save();title()}if(c==='reset'){if(confirm('Start over? This erases Wiz Dog progress and any imported Weed Wizards save on this device.')){try{localStorage.removeItem(SAVE);localStorage.removeItem(LEGACY_SAVE)}catch(_){}state=fresh();title()}}return}});
 $('dialog').addEventListener('click',()=>nextLine());$('dialog').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();nextLine()}});canvas.addEventListener('pointerup',e=>{if(mode!=='game')return;
  const b=canvas.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top,scaleX=W/b.width,scaleY=H/b.height;
  const m=world[state.scene];let camX=Math.max(0,Math.min(m.w*T-W,state.x*T+T/2-W/2)),camY=Math.max(0,Math.min(m.h*T-H,state.y*T+T/2-H/2));
