@@ -138,3 +138,42 @@
 .titleBox .keyLegend{font-size:10px;line-height:1.35;margin:5px 0 0}
 @media(max-width:740px){.titleBox .heroChoice img{width:40px;height:46px;flex-basis:40px}.titleBox .heroChoice strong{font-size:12px}.titleBox .heroChoice small{font-size:9px}.titleBox .titleActions button{font-size:11px;min-height:25px;padding:4px 6px}.titleBox .titleBlurb{font-size:10px;margin:2px 0}.titleBox .heroChoices{gap:6px;margin:3px 0}.titleBox .keyLegend{font-size:9px}.titleBox h1{font-size:26px}}
 @media (orientation:landscape) and (max-height:480px){.titleBox .titleBlurb{display:none}.titleBox .heroChoice img{width:33px;height:35px;flex-basis:33px}.titleBox .heroChoices{margin:2px 0}.titleBox .titleActions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}.titleBox .titleActions button{min-height:27px;font-size:10px}.titleBox .keyLegend{display:none}}
+
+/* v0.10: live health, faint and graphical discovery maps. Existing layout untouched. */
+.healthHearts{color:#f58b83;font-size:24px;letter-spacing:2px;line-height:1.15;font-weight:900;text-shadow:1px 2px #3a1829;margin:4px 0 8px;white-space:nowrap}
+.healthHearts.lowHearts,.hudHearts.lowHearts{color:#ffd57d;animation:heartPulse .85s infinite alternate}
+@keyframes heartPulse{from{opacity:1}to{opacity:.55}}
+.hudHearts{position:absolute;z-index:3;left:9px;top:43px;background:#142c35de;border:1px solid #e4bf81;border-radius:5px;padding:2px 7px;color:#f58b83;font-size:17px;letter-spacing:1px;font-weight:900;line-height:1.2;pointer-events:none;text-shadow:1px 1px #3b1d29}
+.mapChoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0}
+.mapChoice{min-width:0;min-height:36px;padding:6px;font-size:11px;text-align:left;overflow-wrap:anywhere}
+.mapChoice.selectedMap{border-color:#ffe88e;background:#436a55;box-shadow:inset 0 0 0 1px #f4cd69}
+.mapViewer{margin:9px 0;background:#132a36;border:1px solid #84a18b;border-radius:7px;padding:8px;text-align:center}
+.mapViewer h3{margin:1px 0 8px;font-size:14px}
+.mapViewer canvas{width:100%;height:auto;max-height:215px;object-fit:contain;image-rendering:pixelated;background:#426649;border:2px solid #9bba85;border-radius:3px}
+.mapViewer p{margin:6px 0 0}
+.faintBox{border-color:#e5ac91}.faintBox h2{color:#ffe0a8}
+@media(max-width:740px){.healthHearts{font-size:19px;letter-spacing:0}.hudHearts{top:36px;font-size:14px}.mapViewer canvas{max-height:185px}}
+
+/* A compact side-by-side world-map view that shows the entire preview immediately. */
+.panelBox:has(.mapLayout){padding:12px;width:min(100%,455px)}
+.mapIntro{margin:3px 0 7px!important;font-size:11px!important}
+.mapLayout{display:grid;grid-template-columns:minmax(112px,.85fr) minmax(0,1.8fr);gap:8px;align-items:start}
+.mapLayout .mapChoices{display:flex;flex-direction:column;gap:5px;margin:0}
+.mapLayout .mapChoice{min-height:29px;font-size:10px;padding:4px 5px}
+.mapLayout .mapViewer{min-width:0;margin:0;padding:5px}
+.mapLayout .mapViewer h3{font-size:12px;margin:0 0 5px}
+.mapLayout .mapViewer canvas{display:block;max-height:170px;border-width:1px}
+.mapLayout .mapViewer p{font-size:9px;margin-top:4px}
+.mapFuture{font-size:10px!important;margin:6px 0 0!important}
+@media(max-width:500px){.mapLayout{grid-template-columns:minmax(96px,.8fr) minmax(0,1.7fr);gap:6px}.mapLayout .mapChoice{font-size:9px;min-height:28px}.mapLayout .mapViewer canvas{max-height:125px}}
+/* Keep discovered map preview entirely visible on small portrait devices. */
+@media(max-width:740px){
+ .panelBox:has(.mapLayout){padding:7px}
+ .panelBox:has(.mapLayout) .toprow h2{font-size:14px;margin:0}
+ .panelBox:has(.mapLayout) .toprow button{min-height:22px}
+ .mapIntro,.mapFuture,.mapLayout .mapViewer p{display:none}
+ .mapLayout .mapChoices{gap:3px}
+ .mapLayout .mapChoice{font-size:9px;padding:2px 4px;min-height:22px;line-height:1.15}
+ .mapLayout .mapViewer canvas{max-height:104px}
+ .mapLayout .mapViewer h3{font-size:10px;line-height:1.15}
+}

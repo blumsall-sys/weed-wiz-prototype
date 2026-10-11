@@ -8,16 +8,17 @@
 <title>Wiz Dog | Valley of Magical Gardens</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="assets/icon-192.png">
-<link rel="stylesheet" href="src/style.css?v=09">
+<link rel="stylesheet" href="src/style.css?v=010">
 </head>
 <body>
 <div id="app">
- <header class="mast"><div class="brand">✦ WIZ DOG <span class="tiny">/ playable build v0.9</span></div><span class="chip">PAWS & POTIONS · <span id="artStatus">Loading artwork</span></span></header>
+ <header class="mast"><div class="brand">✦ WIZ DOG <span class="tiny">/ playable build v0.10</span></div><span class="chip">PAWS & POTIONS · <span id="artStatus">Loading artwork</span></span></header>
  <div class="layout"><main class="playCol">
   <div class="screen" id="screen">
    <canvas id="game" width="480" height="320" aria-label="Wiz Dog, a top-down animal pixel adventure game"></canvas>
    <div class="hud"><div id="placeHud" class="hudPill">🌿 The Green Patch</div><div id="dayHud" class="hudPill">Day 1 · ☀ Morning</div></div>
    <div id="toast" class="toast hidden" aria-live="polite"></div>
+   <div id="hudHearts" class="hudHearts" role="status" aria-label="Health: 5 of 5 hearts">♥♥♥♥♥</div>
   <div class="controls" id="controls" aria-label="Touch game actions"><div class="actGrid"><button class="touchButton a" data-act="interact" aria-label="A: Interact or continue. Keyboard Z or Enter">A</button><button class="touchButton b" data-act="cast" aria-label="B: Cast or back. Keyboard X or Backspace">B</button><button class="touchButton jump" data-act="jump">JUMP</button><button class="touchButton crouch" data-hold="crouch">CROUCH</button></div></div>
    <div id="overlay" class="overlay"><div class="titleBox"><div class="pixelTag">✶ PAWS, POTIONS & PIXEL MAGIC ✶</div><h1>WIZ DOG</h1><p class="titleBlurb">Choose your apprentice to begin your magical garden adventure.</p>
 <div class="heroChoices" role="group" aria-label="Choose Sunny or Peaches">
@@ -28,10 +29,10 @@
   <nav class="toolbar" aria-label="Game menus"><button data-panel="bag">🎒 Bag</button><button data-panel="quests">❗ Quests</button><button data-panel="map">🗺 Map</button><button data-panel="skills">✦ Skills</button><button data-panel="settings">⚙ Settings</button><button data-panel="pause">Ⅱ Pause</button></nav>
 
   <div class="controlHint">WASD / arrow keys or tap: move · A = interact / plant / water (keyboard Z / Enter) · B = cast / back (keyboard X / Backspace) · Space: jump · Hold C: crouch · I: bag · Q: quests · M: map · K: skills · Esc: pause. Nearby objects can be tapped.</div>
- </main><aside class="sidebar"><button id="questRibbon" class="questRibbon" data-panel="quests" aria-label="Open current quest journal">❗ Quest 1/9 · Home Sweet Home</button><div class="sideBox"><h3>❗ Current quest</h3><p id="questSide">Explore your cottage.</p><div class="sub" id="hintSide">Find the house northwest of the garden.</div><button class="speakQuestBtn" data-command="readQuest">🔊 Hear objective</button></div><div class="sideBox"><h3>🐾 Apprentice status</h3><p id="statusSide">🪄 Wand: not earned<br>🌱 Seeds: 0 · ✦ XP: 0</p><div class="bar"><span id="healthBar"></span></div><div class="sub" id="healthText">Heart 5 / 5</div></div><div id="dialog" class="dialog hidden" role="dialog" aria-live="polite" tabindex="0" aria-label="Dialogue, tap or press A, Z, or Enter to continue"><div class="speaker" id="speaker"></div><div class="message" id="message"></div><div class="continue">A · Continue (Z / Enter / Tap) ▾</div></div></aside></div>
+ </main><aside class="sidebar"><button id="questRibbon" class="questRibbon" data-panel="quests" aria-label="Open current quest journal">❗ Quest 1/9 · Home Sweet Home</button><div class="sideBox"><h3>❗ Current quest</h3><p id="questSide">Explore your cottage.</p><div class="sub" id="hintSide">Find the house northwest of the garden.</div><button class="speakQuestBtn" data-command="readQuest">🔊 Hear objective</button></div><div class="sideBox"><h3>🐾 Apprentice status</h3><p id="statusSide">🪄 Wand: not earned<br>🌱 Seeds: 0 · ✦ XP: 0</p><div class="healthHearts" id="healthHearts" role="status" aria-label="Health: 5 of 5 hearts">♥♥♥♥♥</div><div class="bar"><span id="healthBar"></span></div><div class="sub" id="healthText">Heart 5 / 5</div></div><div id="dialog" class="dialog hidden" role="dialog" aria-live="polite" tabindex="0" aria-label="Dialogue, tap or press A, Z, or Enter to continue"><div class="speaker" id="speaker"></div><div class="message" id="message"></div><div class="continue">A · Continue (Z / Enter / Tap) ▾</div></div></aside></div>
  <footer class="footnote">Original PNG sprite artwork · All game code included · No accounts, downloads or external libraries required</footer>
 </div>
-<script src="assets/atlas/atlas-data.js?v=09"></script>
-<script defer src="src/game.js?v=09"></script>
-<script defer src="src/register-sw.js?v=09"></script>
+<script src="assets/atlas/atlas-data.js?v=010"></script>
+<script defer src="src/game.js?v=010"></script>
+<script defer src="src/register-sw.js?v=010"></script>
 </body></html>

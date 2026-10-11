@@ -1,17 +1,20 @@
-# Wiz Dog v0.9 — GitHub Pages update
+# Wiz Dog v0.10 — GitHub Pages upload
 
-1. Extract `Wiz_Dog_GitHub_Pages_UPLOAD_v0.9.zip`.
-2. Upload the extracted **files and folders**, not the ZIP, to the root of your existing GitHub Pages repository. Keep `assets/`, `src/`, `index.html`, `sw.js`, and `manifest.webmanifest` at their supplied locations.
-3. Commit. Under **Settings → Pages**, confirm deployment from `main` branch, root `/(root)` (or your current site configuration).
-4. Reload the deployed page until the masthead shows **playable build v0.9**. Mobile devices may require closing the tab and reopening due to the prior service worker cache. Build v0.9 uses a new cache identifier.
-5. Existing saves retain the previous v0.7 key and will load normally; no reset is needed. A new game may be useful when replaying the opening quest.
+1. Download and extract `Wiz_Dog_GitHub_Pages_UPLOAD_v0.10.zip` on Windows.
+2. Open your current GitHub Pages repository and upload the **extracted files/folders**, **not the ZIP**, to the repository root. Preserve the supplied `assets/` and `src/` paths. You must replace the previous `index.html`, `src/game.js`, `src/style.css`, and `sw.js` files.
+3. Commit the changes. Your Pages source should remain set to its existing branch and `/ (root)` folder.
+4. Refresh the published URL and confirm the heading reads **playable build v0.10**. If old code persists, hard refresh or close/reopen the tab. The service worker has a fresh cache name.
+5. **Do not clear browser site data or reset your saved game.** Your existing save remains compatible and should load with all quests, character, inventory and crop progress.
 
-The package has fewer than 100 files and is suitable for GitHub's browser upload limit. For future updates, GitHub Desktop is a convenient alternative to dragging files into the site.
+The deployment ZIP has fewer than 100 files, so you can upload it through GitHub’s web upload page. For many future revisions, GitHub Desktop is easier than repeatedly dragging folders into the browser. The `index.html` file must be at the repository root, not wrapped in another folder.
 
-## Priority test cases
-- From the garden: approach the cottage's visible door, walk up into the room, then exit through the single south-wall threshold. You should reappear immediately outside the door.
-- In Mosswick: try both squares of the green-roof Seed Shop doorway; they should both enter correctly and use the matching indoor exit side.
-- Repeat with both squares of the red-roof bakery door.
-- Try stepping against the old incorrect doorway square left of the shop door. That square should now be solid.
-- Walk around interior furniture, interact with the bed/spellbook/kitchen, and purchase seeds at Juniper's counter.
-- Check mobile tap-to-move and tablet layout as in previous builds.
+## Test checklist
+
+- On a new or continued game, look for **five red hearts** both near the upper-left of the playfield and in **Apprentice Status**.
+- At Bram outside the bakery, after taking damage, talk to him: the daily free bun heals up to two missing hearts. The bakery counter heals to full for two coins; neither option wastes healing at full health.
+- Let the hungry snail touch the player (or take hits during the crop-defense quest). Hearts go down, with a short grace period between hits.
+- When hearts reach zero, choose **Wake up in your cottage**. Your hearts refill, the coin cost is at most 2, and the active quest and planted crops are unchanged.
+- Open the **Map** from the toolbar. The Green Patch should render an actual minimap. Visit Mosswick and return to Map; select both discovered outdoors areas. Enter your cottage and the shops to reveal and select their indoor maps.
+- Check sound, spoken dialogue, touch movement, shop purchases, wand spells, building entry/exit, and the remaining quests for regressions.
+
+This is a static, no-build project. It also runs locally by opening `index.html` in Chrome. Browser speech and sound depend on user gestures and available device voices.
