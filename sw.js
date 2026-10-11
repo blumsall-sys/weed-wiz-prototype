@@ -1,4 +1,4 @@
-const CACHE='weed-wizards-build-v04';
+const CACHE='weed-wizards-build-v05';
 const ASSETS=[
   "./",
   "./index.html",

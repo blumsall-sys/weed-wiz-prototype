@@ -1,4 +1,4 @@
-# Weed Wizards v0.4 — GitHub Pages upload guide
+# Weed Wizards v0.5 — GitHub Pages upload guide
 
 ## Which ZIP do I need?
 
@@ -8,7 +8,7 @@
 
 ## Update your existing GitHub Pages repository using the website
 
-1. Extract `Weed_Wizards_v0.4_GitHub_Pages_Upload.zip` to a new Windows folder.
+1. Extract `Weed_Wizards_v0.5_GitHub_Pages_Upload.zip` to a new Windows folder.
 2. Open your GitHub repository in Chrome, select `Add file > Upload files` on the repository's **root** directory.
 3. Drag the **contents of the extracted folder**, NOT the `.zip` file. Make sure `index.html` ends up in the repository root, with `src/` and `assets/` subfolders preserved.
 4. Click **Commit changes**. Wait for the Pages build under `Actions` or `Settings > Pages`.
@@ -21,7 +21,7 @@ If the browser flattens the folders or otherwise fails to preserve the paths, us
 1. Install GitHub Desktop (https://desktop.github.com/) and sign into your account.
 2. File > **Clone repository**. Choose the SAME test repository you already created. Choose a LOCAL empty destination directory.
 3. Use File Explorer to **copy the CONTENTS** of the small upload folder into that newly cloned local repository folder, overwriting matching old game files. Keep the `.git` directory and do not replace the entire clone folder.
-4. In GitHub Desktop, inspect `Changes`, enter a message such as `Weed Wizards v0.4 voice and quests`, click **Commit to main**, then **Push origin**.
+4. In GitHub Desktop, inspect `Changes`, enter a message such as `Weed Wizards v0.5 voice and quests`, click **Commit to main**, then **Push origin**.
 5. Confirm `Settings > Pages > Deploy from a branch > main > /(root)` (unless already configured). Open the site URL.
 
 GitHub's 100-file limit applies to a single browser upload, not GitHub Desktop or normal Git pushes. There is no need to combine every individual sprite into separate files because the game already runs from just SIX packed PNG atlases. Removing old unused source art files is optional; they do not break the game, but you can clean them through GitHub Desktop. Do not delete `assets/sprites/player/down_idle.png` because it is still used on the title screen.
@@ -33,7 +33,7 @@ git clone https://github.com/YOUR-USERNAME/YOUR-REPO.git
 cd YOUR-REPO
 # Copy the CONTENTS of the extracted GitHub Pages Upload folder here.
 git add -A
-git commit -m "Weed Wizards v0.4 voice and quest update"
+git commit -m "Weed Wizards v0.5 voice and quest update"
 git push origin main
 ```
 
@@ -56,3 +56,16 @@ A larger golden exclamation mark labels your CURRENT quest destination, with an 
 - Site game saves are separate from Windows file:// saves (different site origins).
 - On iPhone use Safari, on Android use Chrome; verify narration and audio on each physical device.
 - The lightweight repo contains only the runtime assets. Edit art in the FULL Windows source then run `BUILD_GITHUB_DEPLOY.bat` and upload the regenerated `github-pages-upload/` contents.
+
+
+## v0.5 touch testing checklist
+
+1. On a tablet, open the page, begin the game, then confirm the quest and status remain in the right column and spoken dialogue appears **below Apprentice Status**.
+2. On a portrait phone, confirm the dialogue appears immediately below the canvas and that **Z / Tap to continue** matches the dialogue text size.
+3. Tap empty grass: the apprentice should walk to the selected spot. Tap a garden plot or NPC: the apprentice should approach and interact. Use WASD to override any auto-walk route.
+4. Confirm A, B, Jump, and Crouch remain **inside the map frame**; no separate D-pad should take up space beneath it.
+5. Walk into the lower wooded area and confirm tree crowns render as whole sprites (ground squares should not slice the leaves).
+6. On a landscape phone, the game and right-hand conversation dock should both fit side by side.
+7. Test narration via Settings. It uses the built-in browser voice system; physical-device testing is needed, especially on iOS.
+
+If you still see v0.4 after upload, let GitHub Pages finish publishing, then reload twice to pick up the refreshed v05 service-worker cache. Clearing site storage as a last resort may remove local saved progress.

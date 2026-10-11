@@ -27,7 +27,7 @@ function blit(group,name,x,y,w,h){
 
 const QUESTS=[
  ['Home Sweet Home','Look inside your cottage.','The little cottage is northwest. Walk through its front door with WASD.'],
- ['Meet Your Mentor','Talk to Moss, the garden keeper.','Moss wears a purple hat outside your home.'],
+ ['Meet Your Mentor','Talk to Moss, the garden keeper.','Moss is the white-bearded wizard with a glowing staff outside the cottage.'],
  ['A Seed of Possibility','Find the glowing seed satchel.','Follow the east path toward the golden shimmer by the grove.'],
  ['Plant Your First Moonleaf','Plant a seed in an empty garden plot.','Stand beside a brown bed and press Z to plant (touchscreen: A).'],
  ['Give It a Drink','Water your planted Moonleaf.','Face your planted bed and press Z again to water (touchscreen: A).'],
@@ -62,13 +62,14 @@ createWorld();
 // apprenticeship preserves the player's narration choice. No audio is uploaded.
 function readNarrationPref(){try{return localStorage.getItem('ww-voice-enabled')==='true'}catch(_){return false}}
 function fresh(){return{scene:'farm',x:10,y:13,dir:'up',quest:0,day:1,time:9,heart:5,energy:5,xp:0,coins:8,seeds:0,harvest:0,planted:{},seedFound:false,wand:false,wandCharge:5,skills:{green:0,light:0,find:0},skillPoints:0,flags:{visitedHome:false,metMoss:false,metPip:false,snailShoo:false},snail:{x:22,y:15,active:false,banish:0},settings:{sfx:true,music:true,musicVolume:.38,showTouch:true,night:false,pixelArt:true,narration:readNarrationPref(),narrateQuests:true,voiceRate:.9,questMarkers:true},discovered:['farm'],journal:[]}}
-let state=fresh(),mode='title',panelName='',dialogQueue=[],dialogCallback=null,held=new Set(),lastStep=0,lastSnail=0,lastMoveNpc=0,lastRegen=0,lastTime=0,lastSaved=0,prev=0,jumpUntil=0,jumpVelocity=0,toastUntil=0,castUntil=0,interactUntil=0,particles=[],shots=[],screenShake=0,modalReturn='game',pedsOffset={};
+let tapWalk=null, state=fresh(),mode='title',panelName='',dialogQueue=[],dialogCallback=null,held=new Set(),lastStep=0,lastSnail=0,lastMoveNpc=0,lastRegen=0,lastTime=0,lastSaved=0,prev=0,jumpUntil=0,jumpVelocity=0,toastUntil=0,castUntil=0,interactUntil=0,particles=[],shots=[],screenShake=0,modalReturn='game',pedsOffset={};
 function hasSave(){try{return !!localStorage.getItem(SAVE)}catch(_){return false}}
 function save(){try{localStorage.setItem(SAVE,JSON.stringify(state));return true}catch(_){return false}}
 function load(){try{let s=JSON.parse(localStorage.getItem(SAVE));if(!s||!world[s.scene]||!Number.isInteger(s.quest))return false;state={...fresh(),...s,settings:{...fresh().settings,...s.settings},skills:{...fresh().skills,...s.skills},flags:{...fresh().flags,...s.flags}};state.quest=Math.max(0,Math.min(8,state.quest));state.x=Math.max(1,Math.min(world[state.scene].w-2,state.x));state.y=Math.max(1,Math.min(world[state.scene].h-2,state.y));return true}catch(_){return false}}
-function setOverlay(html){$('overlay').innerHTML=html;$('overlay').classList.remove('hidden')}function closeOverlay(){if(mode==='title')return;$('overlay').classList.add('hidden');mode='game';panelName='';updateSide()}
-function title(){stopSpeech();pauseMusic();mode='title';titleMarkup=titleMarkup.replace(/Narration (ON|OFF)/g,'Narration '+(state.settings.narration?'ON':'OFF'));setOverlay(titleMarkup);$('continueBtn').disabled=!hasSave();$('dialog').classList.add('hidden');held.clear()}
-function begin(continueGame=false){stopSpeech();state=continueGame&&load()?state:fresh();startMusic();$('controls').classList.toggle('hideControls',!state.settings.showTouch);mode='game';$('overlay').classList.add('hidden');$('dialog').classList.add('hidden');updateSide();if(!continueGame||!hasSave()){say('Narrator',['A tiny cottage. Nine empty garden beds. A village beyond the trees.','Today you are nobody important. Tomorrow? Who knows. First, explore your cottage!'])}else notify('Welcome back, apprentice!');save()}
+function setOverlay(html){$('overlay').innerHTML=html;$('overlay').classList.remove('hidden')}function closeOverlay(){if(mode==='title')return;$('overlay').classList.add('hidden');mode='game';panelName='';updateSide();syncTouchControls()}
+function syncTouchControls(){const el=$('controls');if(el)el.classList.toggle('hideControls',mode!=='game'||!state.settings.showTouch)}
+function title(){stopSpeech();pauseMusic();mode='title';titleMarkup=titleMarkup.replace(/Narration (ON|OFF)/g,'Narration '+(state.settings.narration?'ON':'OFF'));setOverlay(titleMarkup);$('continueBtn').disabled=!hasSave();$('dialog').classList.add('hidden');held.clear();clearWalkTarget();syncTouchControls()}
+function begin(continueGame=false){stopSpeech();state=continueGame&&load()?state:fresh();startMusic();$('controls').classList.toggle('hideControls',!state.settings.showTouch);mode='game';$('overlay').classList.add('hidden');$('dialog').classList.add('hidden');updateSide();clearWalkTarget();syncTouchControls();if(!continueGame||!hasSave()){say('Narrator',['A tiny cottage. Nine empty garden beds. A village beyond the trees.','Today you are nobody important. Tomorrow? Who knows. First, explore your cottage!'])}else notify('Welcome back, apprentice!');save()}
 let titleMarkup=$('overlay').innerHTML;
 const htmlEsc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let utteranceId=0; // cancels stale onend handlers and prevents music ducking races
@@ -94,8 +95,8 @@ function speakText(text,force=false){
 function speakQuest(force=false){if(!force&&!state.settings.narrateQuests)return;
  const q=QUESTS[state.quest];speakText('Current quest: '+q[0]+'. '+q[1]+'. '+q[2],force);
 }
-function say(who,lines,cb){updateSide();dialogQueue=(Array.isArray(lines)?lines:[lines]).slice();dialogCallback=cb||null;mode='dialog';held.clear();$('dialog').classList.remove('hidden');$('speaker').textContent=who;nextLine()}
-function nextLine(){stopSpeech();if(dialogQueue.length){const line=dialogQueue.shift();$('message').textContent=line;sound('dialogue');speakText(($('speaker').textContent||'Narrator')+'. '+line)}else{let cb=dialogCallback;dialogCallback=null;$('dialog').classList.add('hidden');mode='game';if(cb)cb();updateSide()}}
+function say(who,lines,cb){updateSide();dialogQueue=(Array.isArray(lines)?lines:[lines]).slice();dialogCallback=cb||null;mode='dialog';held.clear();clearWalkTarget();$('dialog').classList.remove('hidden');syncTouchControls();$('speaker').textContent=who;nextLine()}
+function nextLine(){stopSpeech();if(dialogQueue.length){const line=dialogQueue.shift();$('message').textContent=line;sound('dialogue');speakText(($('speaker').textContent||'Narrator')+'. '+line)}else{let cb=dialogCallback;dialogCallback=null;$('dialog').classList.add('hidden');mode='game';if(cb)cb();updateSide();syncTouchControls()}}
 function notify(s){const t=$('toast');t.textContent=s;t.classList.remove('hidden');toastUntil=performance.now()+2550}
 // Local audio: original sleepy 16-bit soundtrack and individually packaged WAV accents.
 // Music starts only after the player's Begin / Continue action (browser autoplay policy).
@@ -127,7 +128,7 @@ function npcPos(n){let d=pedsOffset[n.id]||{x:0,y:0};return{x:n.x+d.x,y:n.y+d.y}
 function npcAt(x,y){return(NPCS[state.scene]||[]).find(n=>{let p=npcPos(n);return p.x===x&&p.y===y})}
 function solid(scene,x,y,jump=false){let m=world[scene];if(x<0||y<0||x>=m.w||y>=m.h)return true;if(npcAt(x,y))return true;if(m.b.has(key(x,y))){let t=m.g[idx(m,x,y)];if(t==='log'&&jump)return false;return true}let t=m.g[idx(m,x,y)];if(t==='arch'&&!held.has('crouch'))return true;return false}
 function move(dx,dy,jumping=false){if(mode!=='game')return;state.dir=dx===1?'right':dx===-1?'left':dy===1?'down':'up';let tx=state.x+dx,ty=state.y+dy;if(solid(state.scene,tx,ty,jumping)){if(world[state.scene].g[idx(world[state.scene],Math.max(0,Math.min(world[state.scene].w-1,tx)),Math.max(0,Math.min(world[state.scene].h-1,ty)))]==='arch')notify('Hold crouch (C) to slip beneath the arch.');return}state.x=tx;state.y=ty;state.time+=.006;if(state.time>20){state.time=9;state.settings.night=!state.settings.night}if(jumping)jumpUntil=performance.now()+420;for(const p of portals[state.scene]||[])if(p.x===state.x&&p.y===state.y){enter(p);break}if(state.scene==='farm'&&state.x===25&&state.y===6&&!state.seedFound)collectSeeds();updateSide();}
-function enter(p){sound('door');state.scene=p.to;state.x=p.px;state.y=p.py;state.dir='down';if(!state.discovered.includes(p.to))state.discovered.push(p.to);if(p.to==='home'&&!state.flags.visitedHome){state.flags.visitedHome=true;if(state.quest===0)questComplete();say('Cottage',['Home! A bed for resting, a cookbook, a chest, and a little kitchen.','Try Z beside the bed to sleep and advance your garden by one day.']);}else if(p.to==='town'&&!state.flags.metPip&&state.quest>=5)notify('Find Pip in green by the seed shop!');else notify('Welcome to '+sceneNames[p.to]);save()}
+function enter(p){clearWalkTarget();sound('door');state.scene=p.to;state.x=p.px;state.y=p.py;state.dir='down';if(!state.discovered.includes(p.to))state.discovered.push(p.to);if(p.to==='home'&&!state.flags.visitedHome){state.flags.visitedHome=true;if(state.quest===0)questComplete();say('Cottage',['Home! A bed for resting, a cookbook, a chest, and a little kitchen.','Try Z beside the bed to sleep and advance your garden by one day.']);}else if(p.to==='town'&&!state.flags.metPip&&state.quest>=5)notify('Find Pip in green by the seed shop!');else notify('Welcome to '+sceneNames[p.to]);save()}
 function collectSeeds(){state.seedFound=true;state.seeds+=3;if(state.skills.find)state.seeds+=2;sound('pickup');notify('Found '+(state.skills.find?5:3)+' Moonleaf seeds!');if(state.quest===2)questComplete();save()}
 function doNpc(n){if(n.id==='moss'){if(state.quest===1){say('Moss',['You must be the new keeper! I’m Moss, apprentice gardener and unofficial snail negotiator.','Follow the eastern trail. A pouch of magical Moonleaf seeds fell near the old grove.'],()=>{state.flags.metMoss=true;questComplete()})}else if(state.quest===7){questComplete()}else say('Moss',n.lines)}
 else if(n.id==='pip'){if(state.quest===5){say('Pip',['Welcome to Mosswick! This little village runs on friendship, baked goods and questionable magic.','Your Moonleaf is growing? Wonderful! Take this charm. Oh, and keep an eye on the snails near your garden.'],()=>{state.flags.metPip=true;state.coins+=4;state.snail.active=true;questComplete()})}else say('Pip',n.lines)}else if(n.id==='baker'){state.heart=Math.min(5,state.heart+1);say('Bram',['Have a warm bun. Your heart feels a little lighter!','The best adventures include a snack break.']);updateSide()}else say(n.name,n.lines)}
@@ -144,10 +145,61 @@ function interact(){if(mode==='dialog'){nextLine();return}if(mode==='panel'){clo
  say('Apprentice','Nothing unusual here... yet.');}
 function cast(){if(mode==='dialog'){nextLine();return}if(mode==='panel'){closeOverlay();return}if(mode!=='game')return;if(!state.wand){notify('X will cast light once you earn your wand (touchscreen: B).');return}if(state.wandCharge<1){notify('Your wand needs a moment to recharge.');return}state.wandCharge--;castUntil=performance.now()+340;let d=dirs[state.dir];shots.push({x:state.x+.5,y:state.y+.5,dx:d[0],dy:d[1],life:state.skills.light?18:11});sound('cast');updateSide()}
 function jump(){if(mode!=='game')return;let d=dirs[state.dir];jumpUntil=performance.now()+430;if(world[state.scene].g[idx(world[state.scene],Math.max(0,Math.min(world[state.scene].w-1,state.x+d[0])),Math.max(0,Math.min(world[state.scene].h-1,state.y+d[1])))]==='log'){move(d[0],d[1],true);notify('Hopped over a fallen log!')}else{sound('jump')}}
+// Pointer navigation: shortest accessible four-way route through the actual collision map.
+// NPCs and plots can be tapped: approach from a valid adjacent cell and interact.
+function clearWalkTarget(){tapWalk=null;}
+function tapPathTo(wx,wy){
+ if(mode!=='game')return;
+ const m=world[state.scene]; if(wx<0||wy<0||wx>=m.w||wy>=m.h)return;
+ let isNpc=!!npcAt(wx,wy),isPlot=state.scene==='farm'&&PLOTS.some(p=>p.x===wx&&p.y===wy);
+ let isSnail=state.scene==='farm'&&state.snail.active&&state.snail.x===wx&&state.snail.y===wy;
+ let actionable=isNpc||isPlot||isSnail;
+ if(state.x===wx&&state.y===wy){if(actionable)interact();else clearWalkTarget();return;}
+ const origin=key(state.x,state.y),visited=new Map([[origin,null]]),queue=[[state.x,state.y]],reachable=[];
+ for(let i=0;i<queue.length;i++){
+  const [x,y]=queue[i];reachable.push([x,y]);
+  for(const [dx,dy] of Object.values(dirs)){
+   const nx=x+dx,ny=y+dy,k=key(nx,ny);
+   if(!visited.has(k)&&!solid(state.scene,nx,ny)){visited.set(k,key(x,y));queue.push([nx,ny]);}
+  }
+ }
+ // A blocked target (e.g. an NPC or tree) uses its nearest reachable neighbour.
+ const candidates=actionable?reachable.filter(([x,y])=>Math.abs(x-wx)+Math.abs(y-wy)===1):reachable;
+ if(!candidates.length){notify('No walkable route to that spot.');return}
+ candidates.sort((a,b)=>{
+  const da=Math.abs(a[0]-wx)+Math.abs(a[1]-wy),db=Math.abs(b[0]-wx)+Math.abs(b[1]-wy);
+  return da-db || (actionable?(Math.abs(a[0]-state.x)+Math.abs(a[1]-state.y))-(Math.abs(b[0]-state.x)+Math.abs(b[1]-state.y)):0);
+ });
+ const [gx,gy]=candidates[0],route=[];let k=key(gx,gy);
+ while(k!==origin){const [x,y]=k.split(',').map(Number);route.push([x,y]);k=visited.get(k);if(k===undefined){clearWalkTarget();return}}
+ route.reverse();tapWalk={route,scene:state.scene,target:[wx,wy],destination:[gx,gy],actionable,created:performance.now()};
+ if(!route.length&&actionable)finishTapWalk();
+}
+function finishTapWalk(){
+ if(!tapWalk)return;const target=tapWalk;tapWalk=null;
+ if(target.scene!==state.scene||!target.actionable)return;
+ const [x,y]=target.target;
+ if(Math.abs(state.x-x)+Math.abs(state.y-y)<=1){
+  const dx=x-state.x,dy=y-state.y;
+  if(dx>0)state.dir='right';else if(dx<0)state.dir='left';else if(dy>0)state.dir='down';else if(dy<0)state.dir='up';
+  interact();
+ }
+}
+function stepTapWalk(ms){
+ if(mode!=='game'||!tapWalk||held.size||ms-lastStep<130)return;
+ if(tapWalk.scene!==state.scene){clearWalkTarget();return}
+ const next=tapWalk.route.shift();if(!next){finishTapWalk();return}
+ if(solid(state.scene,next[0],next[1])){clearWalkTarget();notify('Path blocked. Tap to choose another route.');return}
+ const prevScene=state.scene;move(next[0]-state.x,next[1]-state.y);
+ lastStep=ms;
+ if(prevScene!==state.scene){clearWalkTarget();return}
+ if(!tapWalk)return;
+ if(!tapWalk.route.length)finishTapWalk();
+}
 function stepMovement(ms){let direction=['up','down','left','right'].find(v=>held.has(v));if(direction&&ms-lastStep>132){let [dx,dy]=dirs[direction];move(dx,dy,false);lastStep=ms}}
 function update(dt,now){
  if(mode==='game'){
-  stepMovement(now);
+  stepMovement(now);stepTapWalk(now);
   if(state.scene==='farm'&&state.snail.active&&now-lastSnail>1600){
    lastSnail=now;
    const sn=state.snail;
@@ -205,9 +257,9 @@ function tileDraw(t,x,y,wx,wy,now){
  }
  if(t==='path'){blit('world',r===0?'path':'dirt',x,y,T,T);}
  else if(t==='soil')blit('world',state.planted[key(wx,wy)]?.watered?'soil_wet':'soil_furrow',x,y,T,T);
- else if(t==='tree')blit('world',r%2?'tree_alt':'tree',x-T*.28,y-T*.78,T*1.55,T*1.78);
- else if(t==='log')blit('world','stump',x-3,y-8,T+6,T+13);
- else if(t==='arch')blit('world','gate',x-4,y-12,T+8,T+18);
+ else if(t==='tree'){/* Tall tree drawn later in the depth-sorted scenery pass. */}
+ else if(t==='log'){/* Depth-sorted stump, not part of ground pass. */}
+ else if(t==='arch'){/* Tall arch drawn as depth-sorted scenery. */}
  else if(t==='shimmer'&&!state.seedFound){
   blit('items','seed_pouch',x,y-5,T,T+4);
   if(Math.floor(now/400)%2){ctx.fillStyle='#fff8aa';ctx.fillRect(x+T-3,y+2,3,3);}
@@ -299,9 +351,9 @@ function drawQuestMarker(camX,camY,now){
  if(!state.settings.questMarkers||state.quest>=8)return;
  const target=questTarget();if(!target)return;
  const px=(target.x+.5)*T-camX,py=target.y*T-camY;
- const inside=px>20&&px<W-20&&py>65&&py<H-55;
+ const inside=px>20&&px<W-20&&py>65&&py<H-22;
  // When offscreen, put a fixed marker on the display edge, pointing toward the target.
- const x=Math.round(Math.max(38,Math.min(W-38,px))),y=Math.round(Math.max(82,Math.min(H-58,py-11)));
+ const x=Math.round(Math.max(38,Math.min(W-38,px))),y=Math.round(Math.max(82,Math.min(H-42,py-11)));
  const bob=Math.round(Math.sin(now/220)*3), by=y-28+bob;
  ctx.fillStyle='#172a31';ctx.fillRect(x-15,by-4,30,30);
  ctx.fillStyle=target.portal?'#88e1ff':'#f7d369';ctx.fillRect(x-12,by-2,24,24);
@@ -334,10 +386,26 @@ function render(now){
   blit('world','sign',Math.floor(32*T-camX),Math.floor(11*T-camY)-14,T+7,T+15);
  }
  if(state.scene==='town')blit('world','sign',Math.floor(5*T-camX),Math.floor(11*T-camY)-13,T+7,T+14);
- for(const n of NPCS[state.scene]||[]){let p=npcPos(n);drawNpc(n,Math.floor(p.x*T-camX),Math.floor(p.y*T-camY),now);
-  // Quest targets use the larger animated marker pass after scene rendering.
+ // Large scenery must be drawn only after every ground tile, otherwise grass
+ // tiles overwrite the canopy. Sort by feet Y for proper top-down occlusion.
+ const actors=[];
+ for(let y=Math.max(0,sy0-4);y<Math.min(m.h,sy1+4);y++)for(let x=Math.max(0,sx0-3);x<Math.min(m.w,sx1+3);x++){
+  const tile=m.g[idx(m,x,y)],sx=Math.floor(x*T-camX),sy=Math.floor(y*T-camY);
+  if(tile==='tree')actors.push({depth:(y+1)*T,draw:()=>{
+   const variant=hash(x,y)%3===0?'tree_alt':'tree';
+   blit('world',variant,sx-14,sy-54,T*2.2,T*3.1);
+  }});
+  if(tile==='log')actors.push({depth:(y+1)*T,draw:()=>blit('world','stump',sx-3,sy-8,T+6,T+13)});
+  if(tile==='arch')actors.push({depth:(y+1)*T,draw:()=>blit('world','gate',sx-4,sy-12,T+8,T+18)});
  }
- drawWizard(Math.floor(state.x*T-camX),Math.floor(state.y*T-camY),now);
+ for(const n of NPCS[state.scene]||[]){const p=npcPos(n),sx=Math.floor(p.x*T-camX),sy=Math.floor(p.y*T-camY);actors.push({depth:(p.y+1)*T,draw:()=>drawNpc(n,sx,sy,now)})}
+ actors.push({depth:(state.y+1)*T+.5,draw:()=>drawWizard(Math.floor(state.x*T-camX),Math.floor(state.y*T-camY),now)});
+ actors.sort((a,b)=>a.depth-b.depth);for(const actor of actors)actor.draw();
+ // Tap-to-walk destination sparkle; does not block any map input.
+ if(tapWalk&&mode==='game'&&tapWalk.scene===state.scene){const [gx,gy]=tapWalk.destination;
+  const px=Math.floor(gx*T-camX+T/2),py=Math.floor(gy*T-camY+T/2);
+  ctx.strokeStyle='#fff0a8';ctx.lineWidth=2;ctx.strokeRect(px-7,py-7,14,14);
+ }
  for(const s of shots){
   if(!blit('items','projectile',Math.floor(s.x*T-camX-10),Math.floor(s.y*T-camY-10),20,20)){
    ctx.fillStyle='#eafa85';ctx.fillRect(Math.floor(s.x*T-camX),Math.floor(s.y*T-camY),8,8);
@@ -345,11 +413,9 @@ function render(now){
  }
  if(state.settings.night){ctx.fillStyle='#162e5770';ctx.fillRect(0,0,W,H)}
  drawQuestMarker(camX,camY,now);
- ctx.fillStyle='#112721dc';ctx.fillRect(5,H-24,W-10,20);
- ctx.font='bold 11px monospace';ctx.fillStyle='#f7eac8';
- const questText=QUESTS[state.quest][0];ctx.fillText('✦ '+questText.slice(0,38)+'  ·  '+state.coins+' coins',10,H-10);
+ // Quest text is in the sidebar / journal; do not cover exits or the player.
 }
-function openPanel(name){if(mode==='title'||mode==='dialog')return;mode='panel';panelName=name;held.clear();let content='',heading={bag:'🎒 Satchel',quests:'📜 Quest Journal',map:'🗺 World Map',skills:'✦ Apprentice Skill Tree',settings:'⚙ Game Settings',pause:'Ⅱ Paused',ending:'✦ Chapter Complete'}[name]||name;
+function openPanel(name){if(mode==='title'||mode==='dialog')return;mode='panel';panelName=name;held.clear();clearWalkTarget();syncTouchControls();let content='',heading={bag:'🎒 Satchel',quests:'📜 Quest Journal',map:'🗺 World Map',skills:'✦ Apprentice Skill Tree',settings:'⚙ Game Settings',pause:'Ⅱ Paused',ending:'✦ Chapter Complete'}[name]||name;
  if(name==='bag'){content=`<p>Carry your findings. Your garden is your main source of future riches.</p><div class="entry">🌱 <strong>Moonleaf seeds:</strong> ${state.seeds}<br>🌼 <strong>Moonleaf harvested:</strong> ${state.harvest}<br>🪙 <strong>Coins:</strong> ${state.coins}<br>🪄 <strong>Glimmer wand:</strong> ${state.wand?'Equipped! B casts light':'Locked until the final quest.'}<br>✨ <strong>Apprentice XP:</strong> ${state.xp}</div><p class="tiny">Plant seeds with Z while facing an empty brown garden bed (touchscreen: A).</p>`}
  else if(name==='quests'){content='<p>Your quest log keeps track of the little things that become big things.</p>'+QUESTS.map((q,i)=>`<div class="entry ${i<state.quest?'done':i===state.quest?'activeQuest':''}">${i<state.quest?'✓':i===state.quest?'❗ ACTIVE QUEST':'🔒'} <strong>${htmlEsc(q[0])}</strong><br>${htmlEsc(q[1])}${i===state.quest?'<br><em>'+htmlEsc(q[2])+'</em>':''}</div>`).join('')}
  else if(name==='map'){content=`<p>Discover locations at your own pace. New places will be added as the story grows.</p><div class="entry">🏡 <strong>The Green Patch</strong> ${state.scene==='farm'?'(You are here)':''}<br>↳ Your cottage and Moonleaf beds</div><div class="entry">🏘 <strong>Mosswick Village</strong> ${state.discovered.includes('town')?'✓ discovered':'◇ not visited'}<br>↳ Seed shop, bakery, friendly villagers</div><div class="entry">🌲 <strong>Starlit Woods</strong> 🔒 Later chapter<br>↳ A forest full of unusual seeds</div><div class="entry">🔮 <strong>Wizard Academy</strong> 🔒 Later chapter<br>↳ Where advanced magic is taught</div>`}
@@ -357,17 +423,23 @@ function openPanel(name){if(mode==='title'||mode==='dialog')return;mode='panel';
  else if(name==='settings'){content=`<p>All progress is saved on this device when browser storage is available.</p><div class="settingsGroup"><strong>🔊 Spoken dialogue and instructions</strong><label><input type="checkbox" data-setting="narration" ${state.settings.narration?'checked':''} ${canSpeak()?'':'disabled'}> Read dialogue and tutorials aloud (default off)</label><label><input type="checkbox" data-setting="narrateQuests" ${state.settings.narrateQuests?'checked':''}> Automatically read new quest instructions</label><label class="volumeLabel">Speaking speed <input type="range" min="65" max="130" step="5" data-volume="voiceRate" value="${Math.round((state.settings.voiceRate??.9)*100)}" aria-label="Speaking speed"><span id="voiceRateReadout">${Math.round((state.settings.voiceRate??.9)*100)}%</span></label><div class="speechButtons"><button class="secondary" data-command="readQuest" ${canSpeak()?'':'disabled'}>🔊 Read current quest</button><button class="secondary" data-command="testVoice" ${canSpeak()?'':'disabled'}>▶ Test voice</button><button class="secondary" data-command="stopVoice">■ Stop</button></div><p class="tiny">${canSpeak()?'Uses built-in device voices. No account, API key or uploads required.':'This browser does not expose speech synthesis. Written dialogue still works.'} On mobile, audio may require a tap.</p></div><div class="line"></div><label><input type="checkbox" data-setting="questMarkers" ${state.settings.questMarkers?'checked':''}> Show bright in-world quest markers and directions</label><label><input type="checkbox" data-setting="music" ${state.settings.music?'checked':''}> Play sleepy lo-fi garden music</label><label class="volumeLabel">Music volume <input type="range" min="0" max="100" step="5" data-volume="musicVolume" value="${Math.round((state.settings.musicVolume??.38)*100)}" aria-label="Music volume"><span id="musicVolumeReadout">${Math.round((state.settings.musicVolume??.38)*100)}%</span></label><label><input type="checkbox" data-setting="sfx" ${state.settings.sfx?'checked':''}> Play retro sound effects</label><label><input type="checkbox" data-setting="pixelArt" ${state.settings.pixelArt?'checked':''}> Use original PNG pixel artwork</label><label><input type="checkbox" data-setting="night" ${state.settings.night?'checked':''}> Evening colour palette</label><label><input type="checkbox" data-setting="showTouch" ${state.settings.showTouch?'checked':''}> Show on-screen touch controls</label><div class="line"></div><div class="stack"><button class="primary" data-command="save">Save progress now</button><button class="secondary" data-command="reset">Reset adventure</button></div><p class="artInfo">Complete art assets are bundled locally. Disable PNG pixel artwork above to compare the debug geometry.</p><p class="tiny">Offline mode: the game itself needs no network connection. Mobile browsers may restrict file:// access, so use a local Wi-Fi server when testing on phones or tablets.</p>`}
  else if(name==='pause'){content=`<p>The world is waiting. Rest here as long as you need.</p><div class="stack"><button class="primary" data-command="resume">Continue exploring</button><button class="secondary" data-command="save">Save game</button><button class="secondary" data-command="title">Return to title</button></div>`}
  else if(name==='ending'){content=`<p><strong>Congratulations, apprentice!</strong> You completed the opening chapter and earned the Glimmer Wand.</p><div class="entry">✦ 8 quests explored<br>🪄 Light spell unlocked<br>🌱 Garden and crop lifecycle available<br>🏘 Cottage and village ready to explore</div><p><strong>Keep playing:</strong> press X to cast (touch B), sleep in your bed to grow Moonleaf, harvest mature plants, buy seeds from Pip and spend your skill points.</p><p class="tiny">In the full game, your next destination will be Starlit Woods and the Wizard Academy.</p>`}
- setOverlay(`<div class="panelBox" role="dialog" aria-label="${heading}"><div class="toprow"><h2>${heading}</h2><button class="secondary" data-command="close">✕</button></div>${content}</div>`);const cs=$('controls');cs.classList.toggle('hideControls',!state.settings.showTouch)}
+ setOverlay(`<div class="panelBox" role="dialog" aria-label="${heading}"><div class="toprow"><h2>${heading}</h2><button class="secondary" data-command="close">✕</button></div>${content}</div>`);syncTouchControls()}
 function press(action){if(action==='interact')interact();else if(action==='cast')cast();else if(action==='jump')jump();else if(action==='crouch'){} }
-function keyDown(e){const k=e.key.toLowerCase();let d=({w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'})[k];if(d){e.preventDefault();held.add(d);if(!e.repeat){move(...dirs[d]);lastStep=performance.now()}return}if([' ','enter','z','x','backspace','escape','i','q','m','k','c'].includes(k))e.preventDefault();if(k==='c')held.add('crouch');if(e.repeat)return;if(k==='z'||k==='enter')press('interact');else if(k==='x'||k==='backspace')press('cast');else if(k===' ')press('jump');else if(k==='escape'){if(mode==='panel')closeOverlay();else if(mode==='dialog')nextLine();else if(mode==='game')openPanel('pause')}else if(k==='i')openPanel('bag');else if(k==='q')openPanel('quests');else if(k==='m')openPanel('map');else if(k==='k')openPanel('skills')}
+function keyDown(e){const k=e.key.toLowerCase();let d=({w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'})[k];if(d){e.preventDefault();clearWalkTarget();held.add(d);if(!e.repeat){move(...dirs[d]);lastStep=performance.now()}return}if([' ','enter','z','x','backspace','escape','i','q','m','k','c'].includes(k))e.preventDefault();if(k==='c')held.add('crouch');if(e.repeat)return;if(k==='z'||k==='enter')press('interact');else if(k==='x'||k==='backspace')press('cast');else if(k===' ')press('jump');else if(k==='escape'){if(mode==='panel')closeOverlay();else if(mode==='dialog')nextLine();else if(mode==='game')openPanel('pause')}else if(k==='i')openPanel('bag');else if(k==='q')openPanel('quests');else if(k==='m')openPanel('map');else if(k==='k')openPanel('skills')}
 function keyUp(e){const k=e.key.toLowerCase();let d=({w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'})[k];if(d)held.delete(d);if(k==='c')held.delete('crouch')}
 window.addEventListener('keydown',keyDown);window.addEventListener('keyup',keyUp);window.addEventListener('blur',()=>held.clear());
-const touchHeld=new Map();document.addEventListener('pointerdown',e=>{let btn=e.target.closest('[data-hold]');if(!btn)return;e.preventDefault();let v=btn.dataset.hold;held.add(v);btn.classList.add('held');touchHeld.set(e.pointerId,{btn,v});try{btn.setPointerCapture(e.pointerId)}catch(_){}if(dirs[v]){move(...dirs[v]);lastStep=performance.now()}},{passive:false});function upPointer(e){let entry=touchHeld.get(e.pointerId);if(!entry)return;entry.btn.classList.remove('held');held.delete(entry.v);touchHeld.delete(e.pointerId)}document.addEventListener('pointerup',upPointer);document.addEventListener('pointercancel',upPointer);
-document.addEventListener('change',e=>{let setting=e.target&&e.target.dataset&&e.target.dataset.setting;if(!setting)return;state.settings[setting]=!!e.target.checked;if(setting==='music')startMusic();if(setting==='narration'){try{localStorage.setItem('ww-voice-enabled',String(state.settings.narration))}catch(_){}if(state.settings.narration)speakText('Narration enabled. Your game dialogue and quest instructions can now be read aloud.',true);else stopSpeech()}$('controls').classList.toggle('hideControls',!state.settings.showTouch);save();updateSide()});
+const touchHeld=new Map();document.addEventListener('pointerdown',e=>{let btn=e.target.closest('[data-hold]');if(!btn)return;e.preventDefault();let v=btn.dataset.hold;clearWalkTarget();held.add(v);btn.classList.add('held');touchHeld.set(e.pointerId,{btn,v});try{btn.setPointerCapture(e.pointerId)}catch(_){}if(dirs[v]){move(...dirs[v]);lastStep=performance.now()}},{passive:false});function upPointer(e){let entry=touchHeld.get(e.pointerId);if(!entry)return;entry.btn.classList.remove('held');held.delete(entry.v);touchHeld.delete(e.pointerId)}document.addEventListener('pointerup',upPointer);document.addEventListener('pointercancel',upPointer);
+document.addEventListener('change',e=>{let setting=e.target&&e.target.dataset&&e.target.dataset.setting;if(!setting)return;state.settings[setting]=!!e.target.checked;if(setting==='music')startMusic();if(setting==='narration'){try{localStorage.setItem('ww-voice-enabled',String(state.settings.narration))}catch(_){}if(state.settings.narration)speakText('Narration enabled. Your game dialogue and quest instructions can now be read aloud.',true);else stopSpeech()}syncTouchControls();save();updateSide()});
 document.addEventListener('input',e=>{const vol=e.target?.dataset?.volume;if(vol==='musicVolume'){state.settings.musicVolume=Number(e.target.value)/100;if(bgm)bgm.volume=state.settings.musicVolume;const n=$('musicVolumeReadout');if(n)n.textContent=e.target.value+'%';}else if(vol==='voiceRate'){state.settings.voiceRate=Number(e.target.value)/100;const n=$('voiceRateReadout');if(n)n.textContent=e.target.value+'%';}});
 document.addEventListener('change',e=>{if(['musicVolume','voiceRate'].includes(e.target?.dataset?.volume))save();});
 document.addEventListener('click',e=>{let btn=e.target.closest('button[data-start],button[data-panel],button[data-act],button[data-command],button[data-skill]');if(!btn)return;if(btn.dataset.command==='toggleNarration'){state.settings.narration=!state.settings.narration;try{localStorage.setItem('ww-voice-enabled',String(state.settings.narration))}catch(_){}if(state.settings.narration)speakText('Narration is on. I will read the story as you play.',true);else stopSpeech();titleMarkup=titleMarkup.replace(/Narration (ON|OFF)/g,'Narration '+(state.settings.narration?'ON':'OFF'));$('narrationStart').textContent='🔊 Narration '+(state.settings.narration?'ON':'OFF');return}if(btn.dataset.start){begin(btn.dataset.start==='continue');return}if(btn.dataset.panel){openPanel(btn.dataset.panel);return}if(btn.dataset.act){press(btn.dataset.act);return}if(btn.dataset.skill){let s=btn.dataset.skill;if(state.skillPoints>0&&!state.skills[s]){state.skills[s]=1;state.skillPoints--;sound('quest');save();openPanel('skills');updateSide()}return}if(btn.dataset.command){let c=btn.dataset.command;if(c==='readQuest'){speakQuest(true);return}if(c==='testVoice'){speakText('Hello apprentice. This is your magical garden. Follow the golden exclamation mark to find your next quest.',true);return}if(c==='stopVoice'){stopSpeech();return}if(c==='close'||c==='resume')closeOverlay();if(c==='save'){let ok=save();notify(ok?'Game saved!':'Storage blocked by browser. Try local server.');closeOverlay()}if(c==='title'){save();title()}if(c==='reset'){if(confirm('Start over? This will erase your local save.')){try{localStorage.removeItem(SAVE)}catch(_){}state=fresh();title()}}return}});
-$('dialog').addEventListener('click',()=>nextLine());canvas.addEventListener('pointerup',e=>{if(mode!=='game')return;const b=canvas.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top,scaleX=W/b.width,scaleY=H/b.height;const m=world[state.scene];let camX=Math.max(0,Math.min(m.w*T-W,state.x*T+T/2-W/2)),camY=Math.max(0,Math.min(m.h*T-H,state.y*T+T/2-H/2));if(m.w*T<W)camX=-(W-m.w*T)/2;if(m.h*T<H)camY=-(H-m.h*T)/2;let wx=Math.floor((x*scaleX+camX)/T),wy=Math.floor((y*scaleY+camY)/T);if(Math.abs(wx-state.x)+Math.abs(wy-state.y)<=1){let dx=wx-state.x,dy=wy-state.y;if(dx>0)state.dir='right';else if(dx<0)state.dir='left';else if(dy>0)state.dir='down';else if(dy<0)state.dir='up';interact()}});
+$('dialog').addEventListener('click',()=>nextLine());$('dialog').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();nextLine()}});canvas.addEventListener('pointerup',e=>{if(mode!=='game')return;
+ const b=canvas.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top,scaleX=W/b.width,scaleY=H/b.height;
+ const m=world[state.scene];let camX=Math.max(0,Math.min(m.w*T-W,state.x*T+T/2-W/2)),camY=Math.max(0,Math.min(m.h*T-H,state.y*T+T/2-H/2));
+ if(m.w*T<W)camX=-(W-m.w*T)/2;if(m.h*T<H)camY=-(H-m.h*T)/2;
+ const wx=Math.floor((x*scaleX+camX)/T),wy=Math.floor((y*scaleY+camY)/T);
+ tapPathTo(wx,wy);
+});
 function frameLoop(ts){let dt=Math.min(40,ts-prev||16);prev=ts;update(dt,ts);render(ts);requestAnimationFrame(frameLoop)}
 updateSide();title();requestAnimationFrame(frameLoop);
 })();

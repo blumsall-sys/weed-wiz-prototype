@@ -27,3 +27,87 @@
 .settingsGroup>strong{display:block;color:#f6df92;font-size:13px}
 .speechButtons{display:flex;flex-wrap:wrap;gap:6px}.speechButtons button{font-size:11px;flex:1 1 94px;padding:6px 7px;min-height:32px}
 @media(max-width:550px){.questRibbon{top:33px;font-size:9px;padding:4px 6px;max-width:93%}.speakQuestBtn{margin-top:6px}}
+
+
+/* v0.5 — readable docked dialogue, full-screen map visibility, touch-first controls */
+.dialog{position:relative;left:auto;right:auto;bottom:auto;transform:none;float:none;z-index:auto;width:100%;min-height:128px;display:flex;flex-direction:column;gap:7px;margin:0;padding:13px 14px;background:#193142;border:2px solid #f4d99b;border-radius:8px;box-shadow:3px 4px #0a1319;cursor:pointer;touch-action:manipulation}
+.dialog .speaker{font-size:14px;margin:0}
+.dialog .message{font-size:14px;line-height:1.5;flex:1;overflow-wrap:anywhere}
+.dialog .continue{font-size:14px;font-weight:800;float:none;margin:0;text-align:right;color:#ffe2a4;line-height:1.45}
+.dialog:focus-visible{outline:3px solid #ffe08c;outline-offset:3px}
+/* Canvas remains unobstructed; actions are compact and contained inside stage. */
+.screen .controls{position:absolute;z-index:4;right:9px;bottom:9px;margin:0;padding:0;max-width:none;width:auto;display:none;align-items:end;pointer-events:none;touch-action:manipulation;user-select:none}
+.screen .controls .actGrid{pointer-events:auto;display:grid;grid-template-columns:repeat(2,44px);grid-template-rows:repeat(2,39px);gap:5px}
+.screen .controls .touchButton{min-height:38px;font-size:12px;border-radius:10px;box-shadow:inset 0 -3px #152c37,1px 2px #09131caa}
+.screen .controls .jump,.screen .controls .crouch{grid-column:auto;font-size:9px}
+@media (pointer:coarse),(max-width:740px){.screen .controls:not(.hideControls){display:flex}}
+@media (hover:hover) and (pointer:fine) and (min-width:741px){.screen .controls{display:none!important}}
+/* Tablets in landscape have a proper right-side dialogue dock. */
+@media (min-width:741px){.layout{grid-template-columns:minmax(0,1fr) minmax(214px,240px)}.sidebar{display:flex;flex-direction:column;gap:10px}}
+/* Portrait phones: dialogue is directly below game; no text overlays entryways. */
+@media (max-width:740px){
+ .layout{display:flex;flex-direction:column;gap:9px}
+ .playCol{display:contents}
+ .screen{order:1;flex:none;aspect-ratio:3 / 2}
+ .sidebar{order:2;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}
+ .sidebar>.dialog{order:-1;grid-column:1/-1;min-height:0;padding:10px 12px}
+ .sidebar>.sideBox{min-width:0;padding:8px}
+ .sidebar>.sideBox h3{font-size:11px;margin-bottom:4px}
+ .sidebar>.sideBox p{font-size:12px;line-height:1.35}
+ .sidebar>.sideBox .sub{font-size:11px}
+ .toolbar{order:3;margin:1px 0 3px;width:100%}
+ .controlHint{order:4;font-size:10px}
+ .dialog .message,.dialog .continue{font-size:14px}
+ .dialog .speaker{font-size:14px}
+ .screen .controls .actGrid{grid-template-columns:repeat(2,42px);grid-template-rows:repeat(2,37px);gap:4px}
+ .screen .controls .touchButton{min-height:36px}
+ .questRibbon{max-width:82%;font-size:10px}
+}
+@media (max-width:390px){
+ .screen .controls .actGrid{grid-template-columns:repeat(2,38px);grid-template-rows:repeat(2,34px);gap:3px}
+ .screen .controls .touchButton{min-height:32px;font-size:10px;padding:0}
+ .sidebar>.sideBox p{font-size:11px}
+ .toolbar button{font-size:10px}
+}
+@media (hover:none) and (pointer:coarse){
+ .screen .controls:not(.hideControls){display:flex}
+ .overlay{touch-action:pan-y}
+ .titleBox{max-height:96%;overflow:auto}
+}
+
+/* Short landscape phones: preserve the map and immediately accessible dialogue
+   without requiring the player to scroll past the game screen. */
+@media (orientation:landscape) and (max-height:480px) and (max-width:740px){
+ #app{padding:5px 8px 10px}
+ .mast{margin-bottom:5px}
+ .mast .brand{font-size:13px}
+ .layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(160px,195px);gap:8px;align-items:start}
+ .playCol{display:block;min-width:0}
+ .screen{aspect-ratio:3 / 2}
+ .sidebar{order:unset;display:flex;flex-direction:column;gap:6px;min-width:0;max-height:calc(100dvh - 40px);overflow:auto}
+ .sidebar>.dialog{order:-1;flex:none}
+ .sidebar>.sideBox{flex:none}
+ .sidebar>.sideBox .sub{font-size:10px}
+ .toolbar{margin:7px 0 3px}
+ .toolbar button{min-height:30px;padding:5px 3px;font-size:10px}
+ .controlHint,.footnote{display:none}
+ .screen .controls .actGrid{grid-template-columns:repeat(2,38px);grid-template-rows:repeat(2,32px)}
+ .screen .controls .touchButton{min-height:31px}
+}
+
+/* Keep Begin/Continue visible within a small, fixed aspect-ratio game canvas. */
+@media (pointer:coarse), (max-width:740px){
+ .titleBox{padding:9px 12px;max-height:100%}
+ .titleBox .heroSprite{display:none}
+ .titleBox h1{font-size:clamp(22px,4vw,30px);margin:5px auto;line-height:.92}
+ .titleBox p{font-size:11px;margin:5px 0}
+ .titleBox .stack{gap:5px;margin:7px 0}
+ .titleBox .stack button{min-height:29px;padding:5px 8px;font-size:11px}
+ .titleBox .tiny{font-size:10px}
+ .pixelTag{font-size:9px;letter-spacing:1px}
+}
+@media (orientation:landscape) and (max-height:480px){
+ .titleBox .tiny{display:none}
+ .titleBox .stack{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ .titleBox h1{font-size:22px}
+}
