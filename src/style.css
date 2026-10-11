@@ -111,3 +111,14 @@
  .titleBox .stack{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
  .titleBox h1{font-size:22px}
 }
+
+/* v0.6: dialogue is an immutable sidebar dock; no stage-wide quest/banner occlusion. */
+.sidebar{align-content:start;min-width:0}
+.sidebar>.questRibbon{position:static;left:auto;right:auto;top:auto;transform:none;display:block;width:100%;max-width:100%;margin:0;text-align:left;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.45;padding:9px 11px;font-size:12px;order:0}
+.sidebar>.sideBox{order:1}
+.sidebar>#dialog{order:2;position:relative!important;inset:auto!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important;float:none!important;width:100%!important;max-width:100%!important;min-height:130px;font-size:14px}
+.sidebar>#dialog.hidden{display:none!important}
+.sidebar>#dialog .message,.sidebar>#dialog .continue{font-size:14px!important;line-height:1.55}
+@media (min-width:741px){.layout{grid-template-columns:minmax(0,1fr) minmax(234px,270px)}.sidebar{display:flex;flex-direction:column;align-self:start;gap:10px}}
+@media (max-width:740px){.sidebar{display:flex;flex-wrap:wrap;gap:8px;align-content:start}.sidebar>.questRibbon{flex:0 0 100%;order:0}.sidebar>.sideBox{flex:1 1 calc(50% - 8px);min-width:0;order:1}.sidebar>#dialog{flex:0 0 100%;order:2;min-height:0}.screen .controls{bottom:8px;right:8px}}
+@media(orientation:landscape) and (max-height:480px) and (max-width:740px){.sidebar{display:flex;flex-direction:column;flex-wrap:nowrap;overflow:auto}.sidebar>.sideBox{flex:none}.sidebar>#dialog{flex:none}}

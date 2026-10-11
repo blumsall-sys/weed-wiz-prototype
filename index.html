@@ -8,15 +8,15 @@
 <title>Weed Wizards | The Apprentice's Garden</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="assets/icon-192.png">
-<link rel="stylesheet" href="src/style.css">
+<link rel="stylesheet" href="src/style.css?v=06">
 </head>
 <body>
 <div id="app">
- <header class="mast"><div class="brand">✦ WEED WIZARDS <span class="tiny">/ playable build v0.5</span></div><span class="chip">THE APPRENTICE'S GARDEN · <span id="artStatus">Loading artwork</span></span></header>
+ <header class="mast"><div class="brand">✦ WEED WIZARDS <span class="tiny">/ playable build v0.6</span></div><span class="chip">THE APPRENTICE'S GARDEN · <span id="artStatus">Loading artwork</span></span></header>
  <div class="layout"><main class="playCol">
   <div class="screen" id="screen">
    <canvas id="game" width="480" height="320" aria-label="Weed Wizards, a top-down pixel adventure game"></canvas>
-   <div class="hud"><div id="placeHud" class="hudPill">🌿 The Green Patch</div><div id="dayHud" class="hudPill">Day 1 · ☀ Morning</div></div><button id="questRibbon" class="questRibbon" data-panel="quests" aria-label="Open current quest journal">❗ Quest 1/8 · Home Sweet Home</button>
+   <div class="hud"><div id="placeHud" class="hudPill">🌿 The Green Patch</div><div id="dayHud" class="hudPill">Day 1 · ☀ Morning</div></div>
    <div id="toast" class="toast hidden" aria-live="polite"></div>
   <div class="controls" id="controls" aria-label="Touch game actions"><div class="actGrid"><button class="touchButton a" data-act="interact" aria-label="Interact or continue dialogue, keyboard Z">A</button><button class="touchButton b" data-act="cast" aria-label="Cast or cancel, keyboard X">B</button><button class="touchButton jump" data-act="jump">JUMP</button><button class="touchButton crouch" data-hold="crouch">CROUCH</button></div></div>
    <div id="overlay" class="overlay"><div class="titleBox"><div class="pixelTag">✶ AN ORIGINAL PIXEL ADVENTURE ✶</div><img class="heroSprite" src="assets/sprites/player/down_idle.png" width="88" height="88" alt="Weed Wizards green-robed apprentice"/><h1>WEED<br>WIZARDS</h1><p>Grow a little magic. Discover a whole world.</p><div class="stack"><button class="primary" data-start="new">✦ Begin apprenticeship</button><button class="secondary" id="continueBtn" data-start="continue">Continue saved game</button><button class="secondary" id="narrationStart" data-command="toggleNarration">🔊 Narration OFF</button></div><p class="tiny">WASD / arrows = Move · Tap a location to walk · Z = Interact · X = Cast / Back</p></div></div>
@@ -24,10 +24,10 @@
   <nav class="toolbar" aria-label="Game menus"><button data-panel="bag">🎒 Bag</button><button data-panel="quests">❗ Quests</button><button data-panel="map">🗺 Map</button><button data-panel="skills">✦ Skills</button><button data-panel="settings">⚙ Settings</button><button data-panel="pause">Ⅱ Pause</button></nav>
 
   <div class="controlHint">WASD / arrows: move · Tap terrain to walk · Z / Enter: interact / plant / water · X: back / cast light (after wand) · Touch buttons: A / B · Space: jump · Hold C: crouch · I: bag · Q: quests · M: map · K: skills · Esc: pause. Nearby objects can be tapped.</div>
- </main><aside class="sidebar"><div class="sideBox"><h3>❗ Current quest</h3><p id="questSide">Explore your cottage.</p><div class="sub" id="hintSide">Find the house northwest of the garden.</div><button class="speakQuestBtn" data-command="readQuest">🔊 Hear objective</button></div><div class="sideBox"><h3>Apprentice status</h3><p id="statusSide">🪄 Wand: not earned<br>🌱 Seeds: 0 · ✦ XP: 0</p><div class="bar"><span id="healthBar"></span></div><div class="sub" id="healthText">Heart 5 / 5</div></div><div id="dialog" class="dialog hidden" role="dialog" aria-live="polite" tabindex="0" aria-label="Dialogue, tap or press Z to continue"><div class="speaker" id="speaker"></div><div class="message" id="message"></div><div class="continue">Z / Tap to continue ▾</div></div></aside></div>
+ </main><aside class="sidebar"><button id="questRibbon" class="questRibbon" data-panel="quests" aria-label="Open current quest journal">❗ Quest 1/8 · Home Sweet Home</button><div class="sideBox"><h3>❗ Current quest</h3><p id="questSide">Explore your cottage.</p><div class="sub" id="hintSide">Find the house northwest of the garden.</div><button class="speakQuestBtn" data-command="readQuest">🔊 Hear objective</button></div><div class="sideBox"><h3>Apprentice status</h3><p id="statusSide">🪄 Wand: not earned<br>🌱 Seeds: 0 · ✦ XP: 0</p><div class="bar"><span id="healthBar"></span></div><div class="sub" id="healthText">Heart 5 / 5</div></div><div id="dialog" class="dialog hidden" role="dialog" aria-live="polite" tabindex="0" aria-label="Dialogue, tap or press Z to continue"><div class="speaker" id="speaker"></div><div class="message" id="message"></div><div class="continue">Z / Tap to continue ▾</div></div></aside></div>
  <footer class="footnote">Original PNG sprite artwork · All game code included · No accounts, downloads or external libraries required</footer>
 </div>
-<script src="assets/atlas/atlas-data.js"></script>
-<script defer src="src/game.js"></script>
-<script defer src="src/register-sw.js"></script>
+<script src="assets/atlas/atlas-data.js?v=06"></script>
+<script defer src="src/game.js?v=06"></script>
+<script defer src="src/register-sw.js?v=06"></script>
 </body></html>

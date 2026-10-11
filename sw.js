@@ -1,4 +1,4 @@
-const CACHE='weed-wizards-build-v05';
+const CACHE='weed-wizards-build-v06';
 const ASSETS=[
   "./",
   "./index.html",
@@ -12,6 +12,7 @@ const ASSETS=[
   "./assets/atlas/items.png",
   "./assets/atlas/ui.png",
   "./assets/atlas/buildings.png",
+  "./assets/atlas/interiors.png",
   "./assets/audio/moonlit_garden_loop.mp3",
   "./assets/audio/dialogue.wav",
   "./assets/audio/ui.wav",
